@@ -1,16 +1,14 @@
 import React, {useState} from "react";
 import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
 import axios from "axios";
+import {toast} from "react-toastify";
 
 const Login = () => {
     const {setAuthentication} = AuthState();
 
     const navigate = useNavigate();
-    const mySwal = withReactContent(Swal);
 
     const [formData, setFormData] = useState({
         email: '',
@@ -22,28 +20,26 @@ const Login = () => {
         setFormData({...formData, [name]: value});
     };
 
-    const handleLogin = (event) => {
+    const handleLogin = async (event) => {
         event.preventDefault();
         const form = event.currentTarget;
 
         if (form.checkValidity() === false) {
             event.stopPropagation();
-        } else {
-            axios.post('http://localhost:8080/api/auth/login', formData)
-                .then(response => {
-                    setAuthentication({
-                        userId: response.data.employeeId,
-                        accessToken: response.data.tokenType + ' ' + response.data.accessToken
-                    });
-                    navigate("/dashboard");
-                })
-                .catch(error => {
-                    mySwal.fire({
-                        icon: 'error',
-                        title: error.response.data.error.code,
-                        text: error.response.data.error.message
-                    });
+        }
+        try {
+            const response = await axios.post('http://localhost:8082/api/auth/login', formData);
+            if (response.status === 200) {
+                setAuthentication({
+                    userId: response.data.employeeId,
+                    accessToken: response.data.tokenType + ' ' + response.data.accessToken,
+                    roles: response.data.roles
                 });
+                toast.success("Login successful as " + response.data.email);
+                navigate("/dashboard")
+            }
+        } catch (error) {
+            toast.error(error.response.data.error.message);
         }
     };
 
