@@ -31,8 +31,8 @@ const Login = () => {
             const response = await axios.post('http://localhost:8082/api/auth/login', formData);
             if (response.status === 200) {
                 setAuthentication({
-                    userId: response.data.employeeId,
-                    accessToken: response.data.tokenType + ' ' + response.data.accessToken,
+                    userId: response.data["employeeId"],
+                    accessToken: response.data["tokenType"] + ' ' + response.data.accessToken,
                     roles: response.data.roles
                 });
                 toast.success("Login successful as " + response.data.email);

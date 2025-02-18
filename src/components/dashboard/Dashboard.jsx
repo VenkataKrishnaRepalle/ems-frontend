@@ -64,6 +64,9 @@ const Dashboard = () => {
                     }
                 }
             } catch (error) {
+                if (error.response?.data?.errorCode && error.response?.data?.errorCode === 'TOKEN_EXPIRED') {
+                    navigate('/');
+                }
                 const errorMessage = error.response?.data?.error?.message || "An unexpected error occurred. Please try again.";
                 toast.error(errorMessage);
                 console.error("Error fetching employee details:", error.message);
@@ -76,7 +79,7 @@ const Dashboard = () => {
         } else {
             toast.error("Authentication token is missing. Please log in again.");
         }
-    }, [authentication]);
+    }, [authentication, navigate]);
 
     useEffect(() => {
         const fetchEmployeeCycles = async () => {
@@ -88,7 +91,7 @@ const Dashboard = () => {
             try {
                 const response = await axios.get(
                     `http://localhost:8082/api/employeePeriod/getAll/${authentication.userId}`,
-                    { headers: { Authorization: `${authentication.accessToken}` } }
+                    {headers: {Authorization: `${authentication.accessToken}`}}
                 );
 
                 if (response?.data && typeof response.data === "object") {
@@ -114,8 +117,6 @@ const Dashboard = () => {
         fetchEmployeeCycles();
     }, [authentication]);
 
-
-
     if (loading) return <div className="text-center mt-5">Loading...</div>;
 
     const getManagerName = () => {
@@ -128,13 +129,14 @@ const Dashboard = () => {
             {/* Navbar */}
             <Navbar expand="lg" className="sticky-top bg-dark navbar-dark shadow">
                 <Container>
-                    <Navbar.Brand href="/dashboard" className="fw-bold">Dashboard</Navbar.Brand>
                     <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                     <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="ms-auto">
+                        <Nav>
                             <Nav.Link href="#MyView">My View</Nav.Link>
                             {isManager && <Nav.Link href="/team-view">My Team</Nav.Link>}
                             {isAdmin && <Nav.Link href="/register">Add Employee</Nav.Link>}
+                            <Nav.Link href={"/attendance"}>Attendance</Nav.Link>
+                            <Nav.Link href={"/leaves"}>Leave</Nav.Link>
                             <NavDropdown title="More" id="basic-nav-dropdown">
                                 <NavDropdown.Item href="/dashboard">Profile</NavDropdown.Item>
                                 <NavDropdown.Item href="#MyView1">Settings</NavDropdown.Item>
