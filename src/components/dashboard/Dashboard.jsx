@@ -6,7 +6,7 @@ import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
 import {Box, Button, Card} from "@mui/material";
 
-const Dashboard = (callback, deps) => {
+const Dashboard = () => {
     const navigate = useNavigate();
     const {authentication} = AuthState();
 
@@ -14,133 +14,114 @@ const Dashboard = (callback, deps) => {
     const [isManager, setIsManager] = useState(false);
     const [loading, setLoading] = useState(true);
     const [years, setYears] = useState([]);
-    const [employeePeriod, setEmployeePeriod] = useState([]);
-    const [employee, setEmployee] = useState({
-        uuid: '',
-        firstName: '',
-        lastName: '',
-        gender: '',
-        dateOfBirth: '',
-        phoneNumber: '',
-        email: '',
-        managerUuid: '',
-        managerFirstName: '',
-        managerLastName: '',
-        isManager: '',
-        joiningDate: '',
-        leavingDate: '',
-        status: '',
-    });
+    const [employeePeriod, setEmployeePeriod] = useState({});
+    const [employee, setEmployee] = useState(null);
+    const [selectedYear, setSelectedYear] = useState();
+    const [hasShownToast, setHasShownToast] = useState(false);
+
 
     useEffect(() => {
         if (!authentication?.accessToken) {
             navigate("/");
             return;
         }
-
-        setIsAdmin(authentication.roles.includes('ADMIN'));
-        setIsManager(authentication.roles.includes('MANAGER'));
+        setIsAdmin(authentication.roles.includes("ADMIN"));
+        setIsManager(authentication.roles.includes("MANAGER"));
     }, [authentication, navigate]);
 
-    const fetchEmployeeDetails = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         if (!authentication?.accessToken) return;
 
         try {
-            const response = await axios.get("http://localhost:8082/api/employee/me", {
-                headers: {'Authorization': `${authentication.accessToken}`}
-            });
+            setLoading(true);
 
-            if (response?.data) {
-                setEmployee(response.data);
-                setLoading(false);
+            const [employeeRes, yearsRes] = await Promise.all([
+                axios.get("http://localhost:8082/api/employee/me", {
+                    headers: {Authorization: `${authentication.accessToken}`},
+                }),
+                axios.get(`http://localhost:8082/api/employeePeriod/getAllEligibleYears/${authentication.userId}`, {
+                    headers: {Authorization: `${authentication.accessToken}`},
+                })
+            ]);
 
-                if (!response.data.managerUuid) {
-                    toast.info("You do not have a Line Manager.");
-                }
-
-                if (response.data.leavingDate && new Date(response.data.leavingDate) <= new Date()) {
-                    toast.warning("Employee is Leaving");
+            if (employeeRes?.data) {
+                setEmployee(employeeRes.data);
+                if (!hasShownToast) {
+                    if (!employeeRes.data.managerUuid) {
+                        toast.info("You do not have a Line Manager.");
+                    }
+                    if (employeeRes.data.leavingDate && new Date(employeeRes.data.leavingDate) <= new Date()) {
+                        toast.warning("Employee is Leaving");
+                    }
+                    setHasShownToast(true);
                 }
             }
-        } catch (error) {
-            if (error.response?.data?.errorCode === 'TOKEN_EXPIRED') {
-                navigate('/');
-            }
-            toast.error(error.response?.data?.error?.message || "An unexpected error occurred.");
-            console.error("Error fetching employee details:", error);
-            setLoading(false);
-        }
-    }, [navigate, authentication?.accessToken]);
 
-    useEffect(() => {
-        if (authentication?.accessToken) {
-            fetchEmployeeDetails();
-        } else {
-            toast.error("Authentication token is missing. Please log in again.");
-        }
-    }, [authentication, fetchEmployeeDetails]);
-
-    const fetchEmployeeYears = useCallback(async () => {
-        if (!authentication?.accessToken || !authentication?.userId) {
-            toast.error("Authentication token or user ID is missing.");
-            return;
-        }
-
-        try {
-            const {data} = await axios.get(
-                `http://localhost:8082/api/employeePeriod/getAllEligibleYears/${authentication.userId}`,
-                {headers: {Authorization: `${authentication.accessToken}`}}
-            );
-
-            if (data?.length) {
-                setYears(data);
+            if (yearsRes?.data?.length) {
+                setYears(yearsRes.data);
+                const year = yearsRes.data[0];
+                setSelectedYear(year);
+                await findEmployeePeriodByYear(year);
             } else {
                 toast.warning("Colleague not assigned with cycle.");
             }
         } catch (error) {
+            if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
+                navigate("/");
+            }
             toast.error(error.response?.data?.error?.message || "An unexpected error occurred.");
-            console.error("Error fetching employee cycle details:", error);
+        } finally {
+            setLoading(false);
         }
-    }, [authentication?.accessToken, authentication?.userId]);
+    }, [navigate, authentication?.accessToken, authentication.userId, hasShownToast]);
 
-    const fetchEmployeeCycles = useCallback(async () => {
-        if (!authentication?.accessToken || !authentication?.userId) {
-            toast.error("Authentication token or user ID is missing.");
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toDateString();
+    };
+
+    const findEmployeePeriodByYear = async (year) => {
+        if (year === selectedYear) {
             return;
         }
-
         try {
-            const {data} = await axios.get(
-                `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${years.at(0)}`,
-                {headers: {Authorization: `${authentication.accessToken}`}});
-            if (data) {
-                setEmployeePeriod(data);
-            }
+            setLoading(true);
+            setSelectedYear(year);
+            const cyclesRes = await axios.get(
+                `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${year}`,
+                {headers: {Authorization: `${authentication.accessToken}`}}
+            );
+            setEmployeePeriod(cyclesRes?.data);
         } catch (error) {
-            toast.error(error.response?.data?.error?.message || "An unexpected error occured.");
+            if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
+                navigate("/");
+            }
+        } finally {
+            setLoading(false);
         }
-    }, [authentication.accessToken, authentication.userId, years]);
+    }
 
-    useEffect(() => {
-        if (authentication?.accessToken) {
-            fetchEmployeeYears();
+    const viewReview = (employeePeriodUuid, reviewType) => {
+        console.log(employeePeriodUuid, reviewType);
+        if (employeePeriodUuid && reviewType) {
+            navigate(`/review/${reviewType}/reviewUuid/${employeePeriodUuid}`, {
+                state: {employeePeriodUuid, reviewType}
+            });
+        } else {
+            toast.error("Review details are missing.");
         }
-    }, [authentication]); // Removed fetchEmployeeYears from dependencies
-
-    useEffect(() => {
-        if (authentication?.accessToken && years.length > 0) {
-            fetchEmployeeCycles();
-        }
-    }, [authentication, years]); // Fetch cycles only after years are set
-
+    };
 
     if (loading) return <div className="text-center mt-5">Loading...</div>;
 
-    const getManagerName = () => (employee.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : "N/A");
+    const getManagerName = () => (employee.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : "");
 
     return (
         <div className="dashboard">
-            {/* Navbar */}
             <Navbar expand="lg" className="sticky-top bg-dark navbar-dark shadow">
                 <Container>
                     <Navbar.Toggle aria-controls="basic-navbar-nav"/>
@@ -202,20 +183,40 @@ const Dashboard = (callback, deps) => {
                     <h3 className="text-center mb-4">Quarterly Reviews</h3>
                     <Box display="flex" justifyContent="center" alignItems="center" gap={2} flexWrap="wrap">
                         {years.map((year, index) => (
-                            <Button key={index} variant="contained">{year}</Button>
+                            <Button key={index} onClick={() => findEmployeePeriodByYear(year)}
+                                    variant="contained">{year === new Date().getFullYear() ? year + " (Current Year)" : year}</Button>
                         ))}
                     </Box>
                     <Container className="mt-5">
-                        <Row className="g-4">
-                            {["Q1", "Q2", "Q3", "Q4"].map((quarter, index) => (
-                                <Col md={6} key={index}>
-                                    <Card className="p-4 shadow-sm text-center">
-                                        <h5>{quarter} Review</h5>
-                                        <p className="text-muted">Please complete your {quarter} review.</p>
-                                        <Button variant="contained">View</Button>
-                                    </Card>
-                                </Col>
-                            ))}
+                        <Row className="g-4 justify-content-center">
+                            {["Q1", "Q2", "Q3", "Q4"].map((quarter, index) => {
+                                const data = employeePeriod?.[quarter.toLowerCase()];
+                                const buttonLabel =
+                                    data?.status === "COMPLETED" || data?.status === "LOCKED"
+                                        ? "View"
+                                        : data?.status === "STARTED" || data?.status === "OVERDUE"
+                                            ? "Submit" : null;
+                                return (
+                                    <Col key={index} xs={12} md={6}>
+                                        <Card className="p-4 shadow-sm text-center">
+                                            <h5>{quarter} Review - {selectedYear}</h5>
+                                            <p className="text-muted">
+                                                {data?.status === "STARTED" || data?.status === "OVERDUE"
+                                                    ? `Please complete your ${quarter} review.`
+                                                    : data?.status === "SCHEDULED" || data?.status === "NOT_STARTED"
+                                                        ? `${quarter} review not started, will start on ${formatDate(data?.startTime)}`
+                                                        : data?.status === "LOCKED"
+                                                            ? `${quarter} review is locked`
+                                                            : `${quarter} review is completed.`}
+                                            </p>
+                                            {buttonLabel ? <Button
+                                                    onClick={() => viewReview(employeePeriod?.employeeCycleId, quarter)}
+                                                    variant="contained">{buttonLabel}</Button> :
+                                                <div style={{height: "36px"}}></div>}
+                                        </Card>
+                                    </Col>
+                                );
+                            })}
                         </Row>
                     </Container>
                 </Container>

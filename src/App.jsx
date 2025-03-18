@@ -9,6 +9,7 @@ import Logout from "./components/login/Logout";
 import TeamView from "./components/team-view/TeamView";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Review from "./components/review/Review";
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                 <Route path={"/register"} element={<Register/>}/>
                 <Route path={"/team-view"} element={<TeamView/>}/>
                 <Route path={"/logout"} element={<Logout/>}/>
+                <Route path={"/review/:reviewType/reviewUuid/:employeePeriodUuid"} element={<Review/>}/>
             </Routes>
         </div>
     );
