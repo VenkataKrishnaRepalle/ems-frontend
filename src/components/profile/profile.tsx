@@ -1,14 +1,27 @@
-import {Container} from "@mui/material";
-import {Col, Form, Row} from "react-bootstrap";
-import {useCallback, useEffect, useState} from "react";
-import {AuthState} from "../config/AuthContext";
+import { Container } from "@mui/material";
+import { Col, Form, Row } from "react-bootstrap";
+import { useCallback, useEffect, useState } from "react";
+import { AuthState } from "../config/AuthContext";
 import axios from "axios";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
+interface Employee {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber?: string;
+    department?: string;
+    managerUuid?: string;
+    managerFirstName?: string;
+    managerLastName?: string;
+    joiningDate?: string;
+    leavingDate?: string;
+}
 
 const Profile = () => {
     const navigate = useNavigate();
-    const {authentication} = AuthState();
-    const [employee, setEmployee] = useState(null);
+    const { authentication } = AuthState();
+    const [employee, setEmployee] = useState<Employee | null>(null);
 
     useEffect(() => {
         if (!authentication?.accessToken) {
@@ -20,14 +33,14 @@ const Profile = () => {
         if (!authentication?.accessToken) return;
 
         try {
-            const profile = await axios.get("http://localhost:8082/api/employee/me", {
-                headers: {Authorization: `${authentication?.accessToken}`},
+            const profile = await axios.get<Employee>("http://localhost:8082/api/employee/me", {
+                headers: { Authorization: `${authentication?.accessToken}` },
             });
 
             if (profile.status === 200) {
                 setEmployee(profile.data);
             }
-        } catch (error) {
+        } catch (error: any) {
             if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
                 navigate("/");
             }
@@ -48,34 +61,35 @@ const Profile = () => {
                             <Form.Label className="fw-bold">Full Name</Form.Label>
                             <Form.Control
                                 value={employee ? `${employee.firstName} ${employee.lastName}` : ""}
-                                disabled/>
+                                disabled
+                            />
                         </Form.Group>
-                        {employee?.managerUuid && employee?.managerFirstName && employee?.managerLastName &&
+                        {employee?.managerUuid && employee?.managerFirstName && employee?.managerLastName && (
                             <Form.Group className={"mt-3"}>
                                 <Form.Label className={"fw-bold"}>Manager Name</Form.Label>
                                 <Form.Control
-                                    value={employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : ""}
-                                    disabled/>
-                            </Form.Group>}
+                                    value={
+                                        employee?.managerUuid
+                                            ? `${employee.managerFirstName} ${employee.managerLastName}`
+                                            : ""
+                                    }
+                                    disabled
+                                />
+                            </Form.Group>
+                        )}
                         <Form.Group className={"mt-3"}>
                             <Form.Label className={"fw-bold"}>Department</Form.Label>
-                            <Form.Control
-                                value={employee?.department ? `${employee.department}` : ""}
-                                disabled/>
+                            <Form.Control value={employee?.department || ""} disabled />
                         </Form.Group>
                     </Col>
                     <Col md={6}>
                         <Form.Group>
                             <Form.Label className={"fw-bold"}>Email</Form.Label>
-                            <Form.Control
-                                value={employee ? `${employee.email}` : ""}
-                                disabled/>
+                            <Form.Control value={employee?.email || ""} disabled />
                         </Form.Group>
                         <Form.Group className={"mt-3"}>
                             <Form.Label className={"fw-bold"}>Phone Number</Form.Label>
-                            <Form.Control
-                                value={employee?.phoneNumber ? `${employee.phoneNumber}` : ""}
-                                disabled/>
+                            <Form.Control value={employee?.phoneNumber || ""} disabled />
                         </Form.Group>
                     </Col>
                 </Row>
@@ -86,20 +100,26 @@ const Profile = () => {
                         <Form.Group>
                             <Form.Label className={"fw-bold"}>Joining Date</Form.Label>
                             <Form.Control
-                                value={employee?.joiningDate ? `${new Date(employee.joiningDate).toDateString()}` : ""}
-                                disabled/>
+                                value={
+                                    employee?.joiningDate
+                                        ? new Date(employee.joiningDate).toDateString()
+                                        : ""
+                                }
+                                disabled
+                            />
                         </Form.Group>
                     </Col>
-                    {employee?.leavingDate &&
+                    {employee?.leavingDate && (
                         <Col md={6}>
                             <Form.Group>
-                                <Form.Label className={"fw-bold"}>Leaving Date(Last working Date)</Form.Label>
+                                <Form.Label className={"fw-bold"}>Leaving Date (Last working Date)</Form.Label>
                                 <Form.Control
-                                    value={`${new Date(employee.leavingDate).toDateString()}`}
-                                    disabled/>
+                                    value={new Date(employee.leavingDate).toDateString()}
+                                    disabled
+                                />
                             </Form.Group>
                         </Col>
-                    }
+                    )}
                 </Row>
             </Container>
         </div>
