@@ -9,9 +9,6 @@ import {Box, Button, Card} from "@mui/material";
 const Dashboard = () => {
     const navigate = useNavigate();
     const {authentication} = AuthState();
-
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isManager, setIsManager] = useState(false);
     const [loading, setLoading] = useState(true);
     const [years, setYears] = useState([]);
     const [employeePeriod, setEmployeePeriod] = useState({});
@@ -23,10 +20,7 @@ const Dashboard = () => {
     useEffect(() => {
         if (!authentication?.accessToken) {
             navigate("/");
-            return;
         }
-        setIsAdmin(authentication.roles.includes("ADMIN"));
-        setIsManager(authentication.roles.includes("MANAGER"));
     }, [authentication, navigate]);
 
     const fetchData = useCallback(async () => {
@@ -69,7 +63,6 @@ const Dashboard = () => {
             if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
                 navigate("/");
             }
-            toast.error(error.response?.data?.error?.message || "An unexpected error occurred.");
         } finally {
             setLoading(false);
         }
@@ -105,11 +98,11 @@ const Dashboard = () => {
         }
     }
 
-    const viewReview = (employeePeriodUuid, reviewType) => {
+    const viewReview = (employeePeriodUuid, reviewType, year) => {
         console.log(employeePeriodUuid, reviewType);
         if (employeePeriodUuid && reviewType) {
             navigate(`/review/${reviewType}/reviewUuid/${employeePeriodUuid}`, {
-                state: {employeePeriodUuid, reviewType}
+                state: {employeePeriodUuid, reviewType, year}
             });
         } else {
             toast.error("Review details are missing.");
@@ -122,27 +115,6 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard">
-            <Navbar expand="lg" className="sticky-top bg-dark navbar-dark shadow">
-                <Container>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav"/>
-                    <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav>
-                            <Nav.Link href="#MyView">My View</Nav.Link>
-                            {isManager && <Nav.Link href="/team-view">My Team</Nav.Link>}
-                            {isAdmin && <Nav.Link href="/register">Add Employee</Nav.Link>}
-                            <Nav.Link href="/attendance">Attendance</Nav.Link>
-                            <Nav.Link href="/leaves">Leave</Nav.Link>
-                            <NavDropdown title="More" id="basic-nav-dropdown">
-                                <NavDropdown.Item href="/dashboard">Profile</NavDropdown.Item>
-                                <NavDropdown.Item href="#MyView1">Settings</NavDropdown.Item>
-                                <NavDropdown.Divider/>
-                                <NavDropdown.Item href="/logout" className="text-danger">Logout</NavDropdown.Item>
-                            </NavDropdown>
-                        </Nav>
-                    </Navbar.Collapse>
-                </Container>
-            </Navbar>
-
             {/* Profile Section */}
             <div className="profile-section bg-gradient p-5">
                 <Container>
@@ -210,7 +182,7 @@ const Dashboard = () => {
                                                             : `${quarter} review is completed.`}
                                             </p>
                                             {buttonLabel ? <Button
-                                                    onClick={() => viewReview(employeePeriod?.employeeCycleId, quarter)}
+                                                    onClick={() => viewReview(employeePeriod?.employeeCycleId, quarter, selectedYear)}
                                                     variant="contained">{buttonLabel}</Button> :
                                                 <div style={{height: "36px"}}></div>}
                                         </Card>
