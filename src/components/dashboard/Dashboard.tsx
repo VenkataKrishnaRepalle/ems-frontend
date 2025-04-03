@@ -5,17 +5,25 @@ import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
 import {Box, Button, Card} from "@mui/material";
+import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const {authentication} = AuthState();
-    const [loading, setLoading] = useState(true);
-    const [years, setYears] = useState([]);
-    const [employeePeriod, setEmployeePeriod] = useState({});
-    const [employee, setEmployee] = useState(null);
-    const [selectedYear, setSelectedYear] = useState();
-    const [hasShownToast, setHasShownToast] = useState(false);
-
+    const [loading, setLoading] = useState<boolean>(true);
+    const [years, setYears] = useState<number[]>([]);
+    const [employeePeriod, setEmployeePeriod] = useState<EmployeePeriodAndTimeline>({
+        Q1: undefined,
+        Q2: undefined,
+        Q3: undefined,
+        Q4: undefined,
+        employeeCycleId: "",
+        employeeId: "",
+        period: undefined
+    });
+    const [employee, setEmployee] = useState<Employee | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number>();
+    const [hasShownToast, setHasShownToast] = useState<boolean>(false);
 
     useEffect(() => {
         if (!authentication?.accessToken) {
@@ -30,12 +38,15 @@ const Dashboard = () => {
             setLoading(true);
 
             const [employeeRes, yearsRes] = await Promise.all([
-                axios.get("http://localhost:8082/api/employee/me", {
+                axios.get<Employee>("http://localhost:8082/api/employee/me", {
                     headers: {Authorization: `${authentication.accessToken}`},
                 }),
-                axios.get(`http://localhost:8082/api/employeePeriod/getAllEligibleYears/${authentication.userId}`, {
-                    headers: {Authorization: `${authentication.accessToken}`},
-                })
+                axios.get<number[]>(
+                    `http://localhost:8082/api/employeePeriod/getAllEligibleYears/${authentication.userId}`,
+                    {
+                        headers: {Authorization: `${authentication.accessToken}`},
+                    }
+                ),
             ]);
 
             if (employeeRes?.data) {
@@ -59,7 +70,7 @@ const Dashboard = () => {
             } else {
                 toast.warning("Colleague not assigned with cycle.");
             }
-        } catch (error) {
+        } catch (error: any) {
             if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
                 navigate("/");
             }
@@ -72,37 +83,35 @@ const Dashboard = () => {
         fetchData();
     }, [fetchData]);
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toDateString();
+    const formatDate = (dateString?: string): string => {
+        return dateString ? new Date(dateString).toDateString() : "N/A";
     };
 
-    const findEmployeePeriodByYear = async (year) => {
+    const findEmployeePeriodByYear = async (year: number) => {
         if (year === selectedYear) {
             return;
         }
         try {
             setLoading(true);
             setSelectedYear(year);
-            const cyclesRes = await axios.get(
+            const cyclesRes = await axios.get<EmployeePeriodAndTimeline>(
                 `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${year}`,
                 {headers: {Authorization: `${authentication.accessToken}`}}
             );
             setEmployeePeriod(cyclesRes?.data);
-        } catch (error) {
+        } catch (error: any) {
             if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
                 navigate("/");
             }
         } finally {
             setLoading(false);
         }
-    }
+    };
 
-    const viewReview = (employeePeriodUuid, reviewType, year) => {
-        console.log(employeePeriodUuid, reviewType);
+    const viewReview = (employeePeriodUuid?: string, reviewType?: string, year?: number) => {
         if (employeePeriodUuid && reviewType) {
             navigate(`/review/${reviewType}/reviewUuid/${employeePeriodUuid}`, {
-                state: {employeePeriodUuid, reviewType, year}
+                state: {employeePeriodUuid, reviewType, year},
             });
         } else {
             toast.error("Review details are missing.");
@@ -111,8 +120,8 @@ const Dashboard = () => {
 
     if (loading) return <div className="text-center mt-5">Loading...</div>;
 
-    const getManagerName = () => (employee.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : "");
-
+    const getManagerName = (): string =>
+        employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : "";
     return (
         <div className="dashboard">
             {/* Profile Section */}

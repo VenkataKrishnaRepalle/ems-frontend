@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import {
     Button,
     Container,
@@ -12,13 +12,38 @@ import {useNavigate} from "react-router-dom";
 import {AuthState} from "../config/AuthContext";
 import {Visibility, VisibilityOff} from "@mui/icons-material";
 import {toast} from "react-toastify";
+import {Department} from "../types/types.d";
 
-const Register = () => {
-    const {authentication} = AuthState();
+interface Employee {
+    firstName: string;
+    lastName: string;
+    gender: string;
+    dateOfBirth: string;
+    phoneNumber: string;
+    email: string;
+    joiningDate: string;
+    leavingDate?: string;
+    departmentName: string;
+    isManager: string;
+    managerUuid: string;
+    jobTitle: string;
+    password: string;
+    confirmPassword: string;
+}
+
+interface Manager {
+    uuid: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+}
+
+const Register: React.FC = () => {
+    const { authentication } = AuthState();
     const navigate = useNavigate();
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-    const [employees, setEmployees] = useState({
+    const [employees, setEmployees] = useState<Employee>({
         firstName: "",
         lastName: "",
         gender: "",
@@ -35,11 +60,13 @@ const Register = () => {
         confirmPassword: "",
     });
 
-    const [departments, setDepartments] = useState([]);
-    const [loadingDepartments, setLoadingDepartments] = useState(false);
-
-    const [managers, setManagers] = useState([]);
-    const [loadingManagers, setLoadingManagers] = useState(false);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [loadingDepartments, setLoadingDepartments] = useState<boolean>(false);
+    const [managers, setManagers] = useState<Manager[]>([]);
+    const [loadingManagers, setLoadingManagers] = useState<boolean>(false);
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (!authentication?.accessToken) {
@@ -54,9 +81,7 @@ const Register = () => {
         setLoadingDepartments(true);
         try {
             const response = await axios.get("http://localhost:8082/api/department/getAll", {
-                headers: {
-                    Authorization: `${authentication.accessToken}`,
-                },
+                headers: { Authorization: `${authentication.accessToken}` },
             });
             setDepartments(response.data);
         } catch (error) {
@@ -71,9 +96,7 @@ const Register = () => {
         setLoadingManagers(true);
         try {
             const response = await axios.get("http://localhost:8082/api/employee/get-active-managers", {
-                headers: {
-                    Authorization: `${authentication.accessToken}`,
-                },
+                headers: { Authorization: `${authentication.accessToken}` },
             });
             setManagers(response.data);
         } catch (error) {
@@ -83,86 +106,62 @@ const Register = () => {
         }
     };
 
-    const handleAuthError = (error) => {
+    const handleAuthError = (error: any) => {
         const errorCode = error.response?.data?.errorCode;
         if (errorCode === "TOKEN_NOT_PROVIDED" || errorCode === "TOKEN_EXPIRED") {
-            navigate("/", {replace: true});
+            navigate("/", { replace: true });
         }
     };
 
-
-    const handleInputChange = (event) => {
-        const {name, value} = event.target;
-        setEmployees({...employees, [name]: value});
-        setErrors((prevErrors) => {
-            const newErrors = {...prevErrors};
-            if (value.trim() === "") {
-                newErrors[name] = `${name.replace(/([A-Z])/g, " $1")} is required.`;
-            } else {
-                delete newErrors[name];
-            }
-            return newErrors;
-        });
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = event.target;
+        setEmployees((prev) => ({ ...prev, [name]: value }));
     };
 
-    const [showPassword, setShowPassword] = useState(false);
-
-    const handleTogglePasswordVisibility = () => {
-        setShowPassword(!showPassword);
-    };
-
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-    const handleToggleConfirmPasswordVisibility = () => {
-        setShowConfirmPassword(!showConfirmPassword);
-    };
-
-    const [errors, setErrors] = useState({}); // To track errors
-
-    const validateForm = () => {
-        const newErrors = {};
-
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
         if (!employees.firstName) newErrors.firstName = "First name is required.";
         if (!employees.lastName) newErrors.lastName = "Last name is required.";
         if (!employees.gender) newErrors.gender = "Gender is required.";
-        if (!employees.email || !/\S+@\S+\.\S+/.test(employees.email))
-            newErrors.email = "Valid email is required.";
-        if (!employees.phoneNumber || !/^\d{10}$/.test(employees.phoneNumber))
-            newErrors.phoneNumber = "Valid phone number is required (10 digits).";
+        if (!employees.email || !/\S+@\S+\.\S+/.test(employees.email)) newErrors.email = "Valid email is required.";
+        if (!employees.phoneNumber || !/^\d{10}$/.test(employees.phoneNumber)) newErrors.phoneNumber = "Valid phone number is required (10 digits).";
         if (!employees.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
         if (!employees.joiningDate) newErrors.joiningDate = "Joining date is required.";
         if (!employees.isManager) newErrors.isManager = "Manager status is required.";
-        if (!employees.password || employees.password.length < 6)
-            newErrors.password = "Password must be at least 6 characters.";
-        if (employees.password !== employees.confirmPassword)
-            newErrors.confirmPassword = "Passwords do not match.";
+        if (!employees.password || employees.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
+        if (employees.password !== employees.confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
 
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0; // Return true if no errors
+        return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
         if (!validateForm()) return;
 
         try {
             const response = await axios.post("http://localhost:8082/api/employee/add", employees, {
-                headers: {
-                    Authorization: `${authentication.accessToken}`,
-                },
+                headers: { Authorization: `${authentication.accessToken}` },
             });
             if (response.status === 201) {
                 toast.success("Employee added successfully");
                 navigate("/dashboard");
             } else {
-                alert("Failed to add new employee");
+                toast.error("Failed to add new employee");
             }
         } catch (error) {
             console.error(error);
-            alert("An error occurred while adding the employee.");
+            toast.error("An error occurred while adding the employee.");
         }
     };
 
+    const handleTogglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
+
+    const handleToggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword(!showConfirmPassword);
+    };
 
     if (!isAdmin) {
         return <Typography variant="h4" align="center">You are not authorized to access this page</Typography>;
@@ -201,7 +200,7 @@ const Register = () => {
                                 {label: "Others", value: "OTHERS"},
                             ]}
                             getOptionLabel={(option) => option.label}
-                            onChange={(event, newValue) => {
+                            onChange={(_event, newValue) => {
                                 setEmployees({
                                     ...employees,
                                     gender: newValue ? newValue.value : ""
@@ -268,7 +267,7 @@ const Register = () => {
                             loading={loadingDepartments}
                             onFocus={fetchDepartments}
                             getOptionLabel={(dept) => dept.name}
-                            onChange={(event, newValue) => {
+                            onChange={(_event, newValue) => {
                                 const departmentValid = newValue && newValue.value;
 
                                 setEmployees({
@@ -294,7 +293,7 @@ const Register = () => {
                                 {label: "No", value: "false"}
                             ]}
                             getOptionLabel={(option) => option.label}
-                            onChange={(event, newValue) => {
+                            onChange={(_event, newValue) => {
                                 setEmployees({
                                     ...employees,
                                     isManager: newValue ? newValue.value : ""
@@ -320,7 +319,7 @@ const Register = () => {
                             }
                             loading={loadingManagers}
                             onFocus={fetchManagers}
-                            onChange={(event, newValue) => {
+                            onChange={(_event, newValue) => {
                                 setEmployees({
                                     ...employees,
                                     managerUuid: newValue ? newValue.uuid : "",
@@ -355,7 +354,7 @@ const Register = () => {
                                 {label: "CEO", value: "CEO"},
                             ]}
                             getOptionLabel={(option) => option.label}
-                            onChange={(event, newValue) => {
+                            onChange={(_event, newValue) => {
                                 setEmployees({
                                     ...employees,
                                     jobTitle: newValue ? newValue.value : ""

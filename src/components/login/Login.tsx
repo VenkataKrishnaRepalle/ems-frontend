@@ -6,7 +6,7 @@ import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap"
 import axios from "axios";
 import {toast} from "react-toastify";
 
-interface LoginForm {
+interface Login {
     email: string;
     password: string;
 }
@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     const {setAuthentication} = AuthState();
     const navigate = useNavigate();
 
-    const [formData, setFormData] = useState<LoginForm>({ email: "", password: "" });
+    const [formData, setFormData] = useState<Login>({ email: "", password: "" });
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;

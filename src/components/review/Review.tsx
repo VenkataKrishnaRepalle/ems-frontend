@@ -6,41 +6,9 @@ import axios from "axios";
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
 import { Form } from "react-bootstrap";
 import { toast } from "react-toastify";
+import {TimelineAndReview, Review} from "../types/types.d";
 
-interface Review {
-    uuid: string;
-    timelineUuid: string;
-    type: string;
-    whatWentWell: string;
-    whatDoneBetter: string;
-    wayForward: string;
-    overallComments: string;
-    managerWhatWentWell: string;
-    managerWhatDoneBetter: string;
-    managerWayForward: string;
-    managerOverallComments: string;
-    rating: string;
-    status: string;
-    createdTime: string;
-    updatedTime: string;
-}
-
-interface TimelineAndReview {
-    uuid: string;
-    employeePeriodUuid: string;
-    type: string;
-    startTime: string;
-    overdueTime: string;
-    lockTime: string;
-    endTime: string;
-    status: string;
-    summaryStatus: string;
-    review: Review;
-    createdTime: string;
-    updatedTime: string;
-}
-
-const Review = () => {
+const AddReview = () => {
     const location = useLocation();
     const state = location.state as { employeePeriodUuid?: string; reviewType?: string; year?: string } || {};
     const navigate = useNavigate();
@@ -191,4 +159,4 @@ const Review = () => {
     );
 };
 
-export default Review;
+export default AddReview;

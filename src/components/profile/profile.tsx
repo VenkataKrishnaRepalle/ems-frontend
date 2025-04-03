@@ -4,19 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AuthState } from "../config/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-interface Employee {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber?: string;
-    department?: string;
-    managerUuid?: string;
-    managerFirstName?: string;
-    managerLastName?: string;
-    joiningDate?: string;
-    leavingDate?: string;
-}
+import {Employee} from "../types/types.d";
 
 const Profile = () => {
     const navigate = useNavigate();
