@@ -104,7 +104,7 @@ const EducationPage: React.FC = () => {
                         headers: {Authorization: authentication.accessToken},
                     }
                 );
-                toast.success("New education added successfully!");
+                toast.success(`Education degree ${editedEducation.degree} with ${editedEducation.schoolName} added successfully`);
             } else {
                 await axios.put(
                     `http://localhost:8082/api/education/update/${uuid}`,
