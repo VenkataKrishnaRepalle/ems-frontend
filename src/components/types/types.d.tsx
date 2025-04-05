@@ -1,3 +1,8 @@
+export interface Login {
+    email: string;
+    password: string;
+}
+
 export interface Employee {
     firstName: string;
     lastName: string;
@@ -18,6 +23,18 @@ export interface Employee {
 export interface Department {
     name: string;
     value: string;
+}
+
+export interface Education {
+    uuid: string;
+    employeeUuid: string;
+    degree: string;
+    schoolName: string;
+    grade: string;
+    startDate: string;
+    endDate: string;
+    createdTime: Date
+    updatedTime: Date;
 }
 
 export interface Period {

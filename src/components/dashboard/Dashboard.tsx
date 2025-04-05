@@ -13,13 +13,13 @@ const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [years, setYears] = useState<number[]>([]);
     const [employeePeriod, setEmployeePeriod] = useState<EmployeePeriodAndTimeline>({
+        employeeId: "",
+        employeeCycleId: "",
+        period: undefined,
         Q1: undefined,
         Q2: undefined,
         Q3: undefined,
-        Q4: undefined,
-        employeeCycleId: "",
-        employeeId: "",
-        period: undefined
+        Q4: undefined
     });
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>();

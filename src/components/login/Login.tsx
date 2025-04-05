@@ -5,17 +5,16 @@ import {useNavigate} from "react-router-dom";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
 import axios from "axios";
 import {toast} from "react-toastify";
+import {Login} from "../types/types.d";
 
-interface Login {
-    email: string;
-    password: string;
-}
-
-const Login: React.FC = () => {
+const LoginPage: React.FC = () => {
     const {setAuthentication} = AuthState();
     const navigate = useNavigate();
 
-    const [formData, setFormData] = useState<Login>({ email: "", password: "" });
+    const [formData, setFormData] = useState<Login>({
+        email: "",
+        password: ""
+    });
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;
@@ -90,4 +89,4 @@ const Login: React.FC = () => {
     );
 };
 
-export default Login;
+export default LoginPage;
