@@ -1,3 +1,5 @@
+export const APPLICATION_URL = `http://localhost:8082/api/`;
+
 export interface Login {
     email: string;
     password: string;
@@ -33,7 +35,18 @@ export interface Education {
     grade: string;
     startDate: string;
     endDate: string;
-    createdTime: Date
+    createdTime: Date;
+    updatedTime: Date;
+}
+
+export interface Attendance {
+    uuid: string;
+    employeeUuid: string;
+    workMode: string;
+    type: string;
+    status: string;
+    date: Date;
+    createdTime: Date;
     updatedTime: Date;
 }
 
