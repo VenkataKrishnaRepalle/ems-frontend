@@ -20,7 +20,7 @@ const LoginPage: React.FC = () => {
 
     validateToken();
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState<boolean>(false);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;

@@ -27,6 +27,25 @@ const Dashboard: React.FC = () => {
 
     ValidateToken();
 
+    const findEmployeePeriodByYear = useCallback(async (year: number) => {
+        if (year === selectedYear) {
+            return;
+        }
+        try {
+            setLoading(true);
+            setSelectedYear(year);
+            const cyclesRes = await axios.get<EmployeePeriodAndTimeline>(
+                `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${year}`,
+                {headers: {Authorization: `${authentication.accessToken}`}}
+            );
+            setEmployeePeriod(cyclesRes?.data);
+        } catch (error: any) {
+            toast.error(error.response?.data?.errorMessage || `Error fetching employee period information for year: ${selectedYear}`);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedYear, authentication.userId, authentication.accessToken]);
+
     const fetchData = useCallback(async () => {
         if (!authentication?.accessToken) return;
 
@@ -68,7 +87,7 @@ const Dashboard: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [authentication.accessToken, authentication.userId]);
+    }, [authentication.accessToken, authentication.userId, findEmployeePeriodByYear]);
 
     useEffect(() => {
         fetchData();
@@ -77,25 +96,6 @@ const Dashboard: React.FC = () => {
     const formatDate = (dateString?: string): string => {
         return dateString ? new Date(dateString).toDateString() : "N/A";
     };
-
-    const findEmployeePeriodByYear = useCallback(async (year: number) => {
-        if (year === selectedYear) {
-            return;
-        }
-        try {
-            setLoading(true);
-            setSelectedYear(year);
-            const cyclesRes = await axios.get<EmployeePeriodAndTimeline>(
-                `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${year}`,
-                {headers: {Authorization: `${authentication.accessToken}`}}
-            );
-            setEmployeePeriod(cyclesRes?.data);
-        } catch (error: any) {
-            toast.error(error.response?.data?.errorMessage || `Error fetching employee period information for year: ${selectedYear}`);
-        } finally {
-            setLoading(false);
-        }
-    }, [selectedYear, authentication.userId, authentication.accessToken]);
 
     const viewReview = (employeePeriodUuid?: string, reviewType?: string, year?: number) => {
         if (employeePeriodUuid && reviewType) {
