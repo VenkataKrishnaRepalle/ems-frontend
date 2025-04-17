@@ -1,11 +1,12 @@
 import React, {useEffect, useState, useCallback} from "react";
-import {Container, Form, Row, Col, Navbar, Nav, NavDropdown} from "react-bootstrap";
+import {Container, Form, Row, Col} from "react-bootstrap";
 import axios from "axios";
 import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
 import {Box, Button, Card} from "@mui/material";
 import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
+import ValidateToken from "../auth/ValidateToken";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -23,13 +24,8 @@ const Dashboard: React.FC = () => {
     });
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>();
-    const [hasShownToast, setHasShownToast] = useState<boolean>(false);
 
-    useEffect(() => {
-        if (!authentication?.accessToken) {
-            navigate("/");
-        }
-    }, [authentication, navigate]);
+    ValidateToken();
 
     const fetchData = useCallback(async () => {
         if (!authentication?.accessToken) return;
@@ -51,14 +47,11 @@ const Dashboard: React.FC = () => {
 
             if (employeeRes?.data) {
                 setEmployee(employeeRes.data);
-                if (!hasShownToast) {
-                    if (!employeeRes.data.managerUuid) {
-                        toast.info("You do not have a Line Manager.");
-                    }
-                    if (employeeRes.data.leavingDate && new Date(employeeRes.data.leavingDate) <= new Date()) {
-                        toast.warning("Employee is Leaving");
-                    }
-                    setHasShownToast(true);
+                if (!employeeRes.data.managerUuid) {
+                    toast.info("You do not have a Line Manager.");
+                }
+                if (employeeRes.data.leavingDate && new Date(employeeRes.data.leavingDate) <= new Date()) {
+                    toast.warning("Employee is Leaving");
                 }
             }
 
@@ -71,13 +64,11 @@ const Dashboard: React.FC = () => {
                 toast.warning("Colleague not assigned with cycle.");
             }
         } catch (error: any) {
-            if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
-                navigate("/");
-            }
+            toast.error(error.response?.data?.errorMessage || 'Error fetching employee information');
         } finally {
             setLoading(false);
         }
-    }, [navigate, authentication?.accessToken, authentication.userId, hasShownToast]);
+    }, [authentication.accessToken, authentication.userId]);
 
     useEffect(() => {
         fetchData();
@@ -87,7 +78,7 @@ const Dashboard: React.FC = () => {
         return dateString ? new Date(dateString).toDateString() : "N/A";
     };
 
-    const findEmployeePeriodByYear = async (year: number) => {
+    const findEmployeePeriodByYear = useCallback(async (year: number) => {
         if (year === selectedYear) {
             return;
         }
@@ -100,13 +91,11 @@ const Dashboard: React.FC = () => {
             );
             setEmployeePeriod(cyclesRes?.data);
         } catch (error: any) {
-            if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
-                navigate("/");
-            }
+            toast.error(error.response?.data?.errorMessage || `Error fetching employee period information for year: ${selectedYear}`);
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedYear, authentication.userId, authentication.accessToken]);
 
     const viewReview = (employeePeriodUuid?: string, reviewType?: string, year?: number) => {
         if (employeePeriodUuid && reviewType) {
@@ -124,7 +113,6 @@ const Dashboard: React.FC = () => {
         employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : "";
     return (
         <div className="dashboard">
-            {/* Profile Section */}
             <div className="profile-section bg-gradient p-5">
                 <Container>
                     <h2 className="mb-4">My Profile</h2>

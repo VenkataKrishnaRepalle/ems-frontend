@@ -2,38 +2,33 @@ import React, {useCallback, useEffect, useState} from "react";
 import {APPLICATION_URL, Attendance} from "../types/types.d";
 import axios from "axios";
 import {AuthState} from "../config/AuthContext";
-import {useNavigate} from "react-router-dom";
+import ValidateToken from "../auth/ValidateToken";
+import {toast} from "react-toastify";
 
 const ATTENDANCE_PATH = `attendance/`;
 const AttendancePage: React.FC = () => {
-    const navigate = useNavigate();
     const {authentication} = AuthState();
     const [attendances, setAttendances] = useState<Attendance[]>();
 
-    const validateToken = useCallback(async () => {
-        try {
-            if (!authentication?.accessToken || !authentication?.userId) {
-                navigate("/");
-                return;
-            }
-            const validateToken = await axios.post(APPLICATION_URL + `auth/validate-token?employeeId=${authentication.userId}`, null, {
-                headers: {Authorization: authentication.accessToken},
-            });
-            if (validateToken.data?.expired === true || validateToken.data?.TOKEN_NOT_PROVIDED === true) {
-                navigate("/");
-                return;
-            }
-        } catch (error) {
-            navigate("/")
-        }
-    }, [navigate, authentication?.accessToken, authentication?.userId]);
-    useEffect(() => {
-        validateToken();
-    }, [validateToken]);
+    ValidateToken();
 
-    const getAllAttendances = async () => {
-        const attendances = await axios.get(APPLICATION_URL + ATTENDANCE_PATH + `get/${authentication.userId}`)
-    }
+    const getAllAttendances = useCallback(async () => {
+        try {
+            const attendances = await axios.get(APPLICATION_URL + ATTENDANCE_PATH + `get/${authentication.userId}`, {
+                headers: {
+                    Authorization: `${authentication.accessToken}`,
+                }
+            });
+            setAttendances(attendances.data);
+        } catch (error) {
+            toast.error(error.response?.data?.errorCode)
+        }
+    }, [authentication.userId, authentication.accessToken]);
+
+    useEffect(() => {
+        getAllAttendances();
+    }, [getAllAttendances]);
+
     return (
         <div>
             <h1>Attendance</h1>
