@@ -6,12 +6,13 @@ import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
 import {Box, Button, Card} from "@mui/material";
 import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
-import ValidateToken from "../auth/ValidateToken";
+import useValidateToken from "../auth/ValidateToken";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const {authentication} = AuthState();
     const [loading, setLoading] = useState<boolean>(true);
+    const [loadPerfCycle, setLoadPerfCycle] = useState<boolean>(false);
     const [years, setYears] = useState<number[]>([]);
     const [employeePeriod, setEmployeePeriod] = useState<EmployeePeriodAndTimeline>({
         employeeId: "",
@@ -25,14 +26,14 @@ const Dashboard: React.FC = () => {
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>();
 
-    ValidateToken();
+    useValidateToken();
 
     const findEmployeePeriodByYear = useCallback(async (year: number) => {
         if (year === selectedYear) {
             return;
         }
         try {
-            setLoading(true);
+            setLoadPerfCycle(true);
             setSelectedYear(year);
             const cyclesRes = await axios.get<EmployeePeriodAndTimeline>(
                 `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${year}`,
@@ -42,7 +43,7 @@ const Dashboard: React.FC = () => {
         } catch (error: any) {
             toast.error(error.response?.data?.errorMessage || `Error fetching employee period information for year: ${selectedYear}`);
         } finally {
-            setLoading(false);
+            setLoadPerfCycle(false);
         }
     }, [selectedYear, authentication.userId, authentication.accessToken]);
 

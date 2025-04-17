@@ -7,7 +7,7 @@ import axios from "axios";
 import {toast} from "react-toastify";
 import {Login} from "../types/types.d";
 import FullPageLoader from "../Loader/FullPageLoader";
-import validateToken from "./ValidateToken";
+import useValidateToken from "./ValidateToken";
 
 const LoginPage: React.FC = () => {
     const {setAuthentication} = AuthState();
@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
         password: ""
     });
 
-    validateToken();
+    useValidateToken();
 
     const [loading, setLoading] = useState<boolean>(false);
 

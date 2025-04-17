@@ -2,15 +2,15 @@ import React, {useCallback, useEffect, useState} from "react";
 import {APPLICATION_URL, Attendance} from "../types/types.d";
 import axios from "axios";
 import {AuthState} from "../config/AuthContext";
-import ValidateToken from "../auth/ValidateToken";
 import {toast} from "react-toastify";
+import useValidateToken from "../auth/ValidateToken";
 
 const ATTENDANCE_PATH = `attendance/`;
 const AttendancePage: React.FC = () => {
     const {authentication} = AuthState();
     const [attendances, setAttendances] = useState<Attendance[]>();
 
-    ValidateToken();
+    useValidateToken();
 
     const getAllAttendances = useCallback(async () => {
         try {

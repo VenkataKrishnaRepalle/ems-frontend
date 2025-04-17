@@ -1,40 +1,43 @@
-import React, {useCallback, useEffect, useState} from "react";
+// src/hooks/useValidateToken.ts
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthState } from "../config/AuthContext";
 import axios from "axios";
-import {APPLICATION_URL} from "../types/types.d";
-import {useNavigate} from "react-router-dom";
-import {AuthState} from "../config/AuthContext";
+import { APPLICATION_URL } from "../types/types.d";
 
-const ValidateToken: () => void = () => {
+const useValidateToken = () => {
+    const { authentication } = AuthState();
     const navigate = useNavigate();
-    const {authentication} = AuthState();
-    const [loading, setLoading] = useState<boolean>(false);
-
-    const validateToken = useCallback(async () => {
-        setLoading(true);
-        try {
-            if (!authentication?.accessToken || !authentication?.userId) {
-                navigate("/");
-                return;
-            }
-            const validateToken = await axios.post(APPLICATION_URL + `auth/validate-token?employeeId=${authentication.userId}`, null, {
-                headers: { Authorization: authentication.accessToken },
-            });
-
-            if (validateToken.data?.expired === true || validateToken.data?.TOKEN_NOT_PROVIDED === true) {
-                navigate("/");
-                return;
-            }
-        } catch (error) {
-            navigate("/");
-        } finally {
-            setLoading(false);
-        }
-    }, [navigate, authentication?.accessToken, authentication?.userId]);
 
     useEffect(() => {
-        validateToken();
-    }, [validateToken]);
+        const validate = async () => {
+            try {
+                if (!authentication?.accessToken || !authentication?.userId) {
+                    navigate("/");
+                    return;
+                }
+
+                const response = await axios.post(
+                    `${APPLICATION_URL}auth/validate-token?employeeId=${authentication.userId}`,
+                    null,
+                    {
+                        headers: {
+                            Authorization: authentication.accessToken,
+                        },
+                    }
+                );
+
+                const data = response.data;
+                if (data?.expired === true || data?.TOKEN_NOT_PROVIDED === true) {
+                    navigate("/");
+                }
+            } catch (error) {
+                navigate("/");
+            }
+        };
+
+        validate();
+    }, [authentication, navigate]);
 };
 
-
-export default ValidateToken;
+export default useValidateToken;
