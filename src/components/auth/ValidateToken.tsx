@@ -1,13 +1,13 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthState } from "../config/AuthContext";
+import {useEffect} from "react";
+import {useNavigate} from "react-router-dom";
+import {AuthState} from "../config/AuthContext";
 import axios from "axios";
-import { APPLICATION_URL } from "../types/types.d";
+import {APPLICATION_URL} from "../types/types.d";
 import {toast} from "react-toastify";
 
 const useValidateToken = () => {
-    const { authentication } = AuthState();
-    const { setAuthentication } = AuthState();
+    const {authentication} = AuthState();
+    const {setAuthentication} = AuthState();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -35,6 +35,8 @@ const useValidateToken = () => {
                     toast.dismiss();
                     toast.success("You have been logged out successfully.");
                     navigate("/");
+                } else if (data?.expired === false) {
+                    navigate("/dashboard");
                 }
             } catch (error) {
                 navigate("/");
@@ -42,7 +44,7 @@ const useValidateToken = () => {
         };
 
         validate();
-    }, [authentication, navigate]);
+    }, [authentication, navigate, setAuthentication]);
 };
 
 export default useValidateToken;
