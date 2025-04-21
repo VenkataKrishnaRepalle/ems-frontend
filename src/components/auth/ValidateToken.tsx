@@ -35,8 +35,6 @@ const useValidateToken = () => {
                     toast.dismiss();
                     toast.success("You have been logged out successfully.");
                     navigate("/");
-                } else if (data?.expired === false) {
-                    navigate("/dashboard");
                 }
             } catch (error) {
                 navigate("/");
