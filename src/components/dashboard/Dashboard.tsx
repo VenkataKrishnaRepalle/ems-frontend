@@ -7,6 +7,7 @@ import {toast} from "react-toastify";
 import {Box, Button, Card} from "@mui/material";
 import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
 import useValidateToken from "../auth/ValidateToken";
+import FullPageLoader from "../Loader/FullPageLoader";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -48,8 +49,6 @@ const Dashboard: React.FC = () => {
     }, [selectedYear, authentication.userId, authentication.accessToken]);
 
     const fetchData = useCallback(async () => {
-        if (!authentication?.accessToken) return;
-
         try {
             setLoading(true);
 
@@ -88,7 +87,7 @@ const Dashboard: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [authentication.accessToken, authentication.userId, findEmployeePeriodByYear]);
+    }, [authentication.accessToken, authentication.userId]);
 
     useEffect(() => {
         fetchData();
@@ -108,10 +107,8 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="text-center mt-5">Loading...</div>;
+    if (loading) return <FullPageLoader loading={loading}/>;
 
-    const getManagerName = (): string =>
-        employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : "";
     return (
         <div className="dashboard">
             <div className="profile-section bg-gradient p-5">
@@ -135,7 +132,7 @@ const Dashboard: React.FC = () => {
                         <Col md={6}>
                             <Form.Group>
                                 <Form.Label className="fw-bold">Line Manager</Form.Label>
-                                <Form.Control value={getManagerName()} disabled/>
+                                <Form.Control value={employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : ""} disabled/>
                             </Form.Group>
                         </Col>
                         <Col md={6}>
