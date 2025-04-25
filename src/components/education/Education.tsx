@@ -93,6 +93,16 @@ const EducationPage: React.FC = () => {
         }));
     };
 
+    const validateDate = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        console.log(e.target.name);
+        const date = new Date(Date.parse(e.target.value));
+        const isValid = !isNaN(date.getTime());
+        if (!isValid) {
+            toast.error(`Invalid input of ${e.target.name} values ${e.target.value}`);
+        }
+        return isValid;
+    };
+
 
     const handleSave = async (uuid: string) => {
         try {
@@ -246,7 +256,12 @@ const EducationPage: React.FC = () => {
                                             <TextField
                                                 type="date"
                                                 value={editedEducation.startDate || ""}
-                                                onChange={(e) => handleChange(e, "startDate")}/>
+                                                onChange={(e) => {
+                                                    if (validateDate(e)) {
+                                                        handleChange(e, "startDate");
+                                                    }
+                                                }}
+                                            />
                                         ) : (
                                             education.startDate
                                         )}
@@ -256,7 +271,11 @@ const EducationPage: React.FC = () => {
                                             <TextField
                                                 type="date"
                                                 value={editedEducation.endDate || ""}
-                                                onChange={(e) => handleChange(e, "endDate")}
+                                                onChange={(e) => {
+                                                    if (validateDate(e)) {
+                                                        handleChange(e, "endDate");
+                                                    }
+                                                }}
                                             />
                                         ) : (
                                             education.endDate
