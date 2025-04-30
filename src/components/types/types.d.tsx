@@ -104,3 +104,13 @@ export interface TimelineAndReview {
     createdTime: string;
     updatedTime: string;
 }
+
+export interface Error {
+    code: String;
+    message: String;
+}
+
+export interface ErrorResponse {
+    status: String;
+    error: Error;
+}

@@ -3,11 +3,11 @@ import {useState, ChangeEvent, FormEvent} from "react";
 import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
-import axios from "axios";
 import {toast} from "react-toastify";
 import {Login} from "../types/types.d";
 import FullPageLoader from "../Loader/FullPageLoader";
 import useValidateToken from "./ValidateToken";
+import {LOGIN_API} from "../../api/auth";
 
 const LoginPage: React.FC = () => {
     const {setAuthentication} = AuthState();
@@ -38,20 +38,22 @@ const LoginPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post("http://localhost:8082/api/auth/login", formData);
-            if (response.status === 200) {
+            const response = await LOGIN_API(formData);
+            if (response !== null) {
+                console.log(response);
                 setAuthentication({
-                    userId: response.data.employeeId,
-                    accessToken: `${response.data.tokenType} ${response.data.accessToken}`,
-                    roles: response.data.roles
+                    userId: response.employeeId,
+                    accessToken: `${response.tokenType} ${response.accessToken}`,
+                    roles: response.roles
                 });
-                toast.success("Login successful as " + response.data.email);
+                toast.success("Login successful as " + response.email);
                 navigate("/dashboard");
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.error?.message || "Login failed");
+        } catch (error) {
+
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
@@ -61,7 +63,7 @@ const LoginPage: React.FC = () => {
                 <Container className="d-flex justify-content-center align-items-center bg-light min-vh-100">
                     <Row className="w-100 justify-content-center">
                         <Col xs={12} sm={8} md={6} lg={5}>
-                            <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>
+                            <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>l
                                 <h1 className="mb-4">Login</h1>
                                 <FloatingLabel className="mb-3" controlId="email" label="Email">
                                     <Form.Control
