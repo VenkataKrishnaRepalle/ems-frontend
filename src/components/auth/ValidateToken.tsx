@@ -4,6 +4,7 @@ import {AuthState} from "../config/AuthContext";
 import axios from "axios";
 import {APPLICATION_URL} from "../types/types.d";
 import {toast} from "react-toastify";
+import {VALIDATE_TOKEN_API} from "../../api/auth";
 
 const useValidateToken = () => {
     const {authentication} = AuthState();
@@ -18,17 +19,7 @@ const useValidateToken = () => {
                     return;
                 }
 
-                const response = await axios.post(
-                    `${APPLICATION_URL}auth/validate-token?employeeId=${authentication.userId}`,
-                    null,
-                    {
-                        headers: {
-                            Authorization: authentication.accessToken,
-                        },
-                    }
-                );
-
-                const data = response.data;
+                const data = await VALIDATE_TOKEN_API(authentication.userId);
                 if (data?.expired === true || data?.TOKEN_NOT_PROVIDED === true) {
                     setAuthentication(null);
                     localStorage.removeItem("authentication");

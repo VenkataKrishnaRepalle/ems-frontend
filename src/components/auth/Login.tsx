@@ -1,16 +1,15 @@
 import * as React from "react";
-import {useState, ChangeEvent, FormEvent} from "react";
+import {useState, ChangeEvent, FormEvent, useEffect} from "react";
 import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
 import {toast} from "react-toastify";
 import {Login} from "../types/types.d";
 import FullPageLoader from "../Loader/FullPageLoader";
-import useValidateToken from "./ValidateToken";
-import {LOGIN_API} from "../../api/auth";
+import {LOGIN_API, VALIDATE_TOKEN_API} from "../../api/auth";
 
 const LoginPage: React.FC = () => {
-    const {setAuthentication} = AuthState();
+    const {authentication, setAuthentication} = AuthState();
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState<Login>({
@@ -18,9 +17,26 @@ const LoginPage: React.FC = () => {
         password: ""
     });
 
-    useValidateToken();
-
     const [loading, setLoading] = useState<boolean>(false);
+
+    useEffect(() => {
+        const validate = async () => {
+            setLoading(true);
+            if (authentication?.userId && authentication?.accessToken) {
+                try {
+                    const validateToken = await VALIDATE_TOKEN_API(authentication.userId);
+                    if (validateToken?.expired === false) {
+                        navigate("/dashboard");
+                    }
+                } catch (error) {
+                    console.error("Token validation failed", error);
+                }
+            }
+            setLoading(false);
+        };
+
+        validate();
+    }, [authentication, navigate]);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;
@@ -35,12 +51,12 @@ const LoginPage: React.FC = () => {
             event.stopPropagation();
             return;
         }
+
         setLoading(true);
 
         try {
             const response = await LOGIN_API(formData);
             if (response !== null) {
-                console.log(response);
                 setAuthentication({
                     userId: response.employeeId,
                     accessToken: `${response.tokenType} ${response.accessToken}`,
@@ -50,7 +66,7 @@ const LoginPage: React.FC = () => {
                 navigate("/dashboard");
             }
         } catch (error) {
-
+            toast.error("Login failed. Please check your credentials.");
         } finally {
             setLoading(false);
         }
@@ -63,7 +79,7 @@ const LoginPage: React.FC = () => {
                 <Container className="d-flex justify-content-center align-items-center bg-light min-vh-100">
                     <Row className="w-100 justify-content-center">
                         <Col xs={12} sm={8} md={6} lg={5}>
-                            <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>l
+                            <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>
                                 <h1 className="mb-4">Login</h1>
                                 <FloatingLabel className="mb-3" controlId="email" label="Email">
                                     <Form.Control
@@ -101,9 +117,7 @@ const LoginPage: React.FC = () => {
                 </Container>
             }
         </>
-
-    )
-        ;
+    );
 };
 
 export default LoginPage;

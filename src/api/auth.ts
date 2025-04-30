@@ -6,3 +6,7 @@ export const LOGIN_API = async (login: Login) => {
     return response.data;
 }
 
+export const VALIDATE_TOKEN_API = async (userId: string) => {
+    const response = await api.post(`auth/validate-token?employeeId=${userId}`);
+    return response.data;
+}
