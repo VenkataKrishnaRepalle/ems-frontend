@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./Api";
 import {Employee} from "../components/types/types.d";
 
 export const ME_API = async () => {

@@ -6,7 +6,7 @@ import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap"
 import {toast} from "react-toastify";
 import {Login} from "../types/types.d";
 import FullPageLoader from "../Loader/FullPageLoader";
-import {LOGIN_API, VALIDATE_TOKEN_API} from "../../api/auth";
+import {LOGIN_API, VALIDATE_TOKEN_API} from "../../api/Auth";
 
 const LoginPage: React.FC = () => {
     const {authentication, setAuthentication} = AuthState();

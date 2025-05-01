@@ -1,10 +1,8 @@
 import {useEffect} from "react";
 import {useNavigate} from "react-router-dom";
 import {AuthState} from "../config/AuthContext";
-import axios from "axios";
-import {APPLICATION_URL} from "../types/types.d";
 import {toast} from "react-toastify";
-import {VALIDATE_TOKEN_API} from "../../api/auth";
+import {VALIDATE_TOKEN_API} from "../../api/Auth";
 
 const useValidateToken = () => {
     const {authentication} = AuthState();

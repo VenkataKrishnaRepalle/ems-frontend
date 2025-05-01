@@ -7,8 +7,8 @@ import {Box, Button, Card} from "@mui/material";
 import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
 import useValidateToken from "../auth/ValidateToken";
 import FullPageLoader from "../Loader/FullPageLoader";
-import {ME_API} from "../../api/employee";
-import {GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR} from "../../api/employee_period";
+import {ME_API} from "../../api/Employee";
+import {GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR} from "../../api/EmployeePeriod";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();

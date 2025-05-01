@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./Api";
 import {EmployeePeriodAndTimeline} from "../components/types/types.d";
 
 export const GET_ALL_ELIGIBLE_YEARS = async (userId: string) => {
