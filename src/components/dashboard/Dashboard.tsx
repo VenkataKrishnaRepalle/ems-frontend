@@ -1,6 +1,5 @@
 import React, {useEffect, useState, useCallback} from "react";
 import {Container, Form, Row, Col} from "react-bootstrap";
-import axios from "axios";
 import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
@@ -8,12 +7,13 @@ import {Box, Button, Card} from "@mui/material";
 import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
 import useValidateToken from "../auth/ValidateToken";
 import FullPageLoader from "../Loader/FullPageLoader";
+import {ME_API} from "../../api/employee";
+import {GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR} from "../../api/employee_period";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const {authentication} = AuthState();
     const [loading, setLoading] = useState<boolean>(true);
-    const [loadPerfCycle, setLoadPerfCycle] = useState<boolean>(false);
     const [years, setYears] = useState<number[]>([]);
     const [employeePeriod, setEmployeePeriod] = useState<EmployeePeriodAndTimeline>({
         employeeId: "",
@@ -34,56 +34,40 @@ const Dashboard: React.FC = () => {
             return;
         }
         try {
-            setLoadPerfCycle(true);
             setSelectedYear(year);
-            const cyclesRes = await axios.get<EmployeePeriodAndTimeline>(
-                `http://localhost:8082/api/employeePeriod/getByYear/${authentication.userId}?year=${year}`,
-                {headers: {Authorization: `${authentication.accessToken}`}}
-            );
-            setEmployeePeriod(cyclesRes?.data);
+            const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(authentication.userId, year);
+            setEmployeePeriod(cyclesRes);
         } catch (error: any) {
-            toast.error(error.response?.data?.errorMessage || `Error fetching employee period information for year: ${selectedYear}`);
-        } finally {
-            setLoadPerfCycle(false);
+            toast.error(`Error fetching employee period information for year: ${selectedYear}`);
         }
-    }, [selectedYear, authentication.userId, authentication.accessToken]);
+    }, [selectedYear, authentication.userId]);
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
 
-            const [employeeRes, yearsRes] = await Promise.all([
-                axios.get<Employee>("http://localhost:8082/api/employee/me", {
-                    headers: {Authorization: `${authentication.accessToken}`},
-                }),
-                axios.get<number[]>(
-                    `http://localhost:8082/api/employeePeriod/getAllEligibleYears/${authentication.userId}`,
-                    {
-                        headers: {Authorization: `${authentication.accessToken}`},
-                    }
-                ),
-            ]);
+            const [employeeRes, yearsRes] = await Promise.all([ME_API(), GET_ALL_ELIGIBLE_YEARS(authentication.userId)]);
 
-            if (employeeRes?.data) {
-                setEmployee(employeeRes.data);
-                if (!employeeRes.data.managerUuid) {
+            if (null !== employeeRes) {
+                setEmployee(employeeRes);
+                if (!employeeRes.managerUuid) {
                     toast.info("You do not have a Line Manager.");
                 }
-                if (employeeRes.data.leavingDate && new Date(employeeRes.data.leavingDate) <= new Date()) {
+                if (employeeRes.leavingDate && new Date(employeeRes.leavingDate) <= new Date()) {
                     toast.warning("Employee is Leaving");
                 }
             }
 
-            if (yearsRes?.data?.length) {
-                setYears(yearsRes.data);
-                const year = yearsRes.data[0];
+            if (yearsRes?.length) {
+                setYears(yearsRes);
+                const year = yearsRes[0];
                 setSelectedYear(year);
                 await findEmployeePeriodByYear(year);
             } else {
                 toast.warning("Colleague not assigned with cycle.");
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.errorMessage || 'Error fetching employee information');
+            toast.error('Error fetching employee information');
         } finally {
             setLoading(false);
         }
@@ -97,7 +81,8 @@ const Dashboard: React.FC = () => {
         return dateString ? new Date(dateString).toDateString() : "N/A";
     };
 
-    const viewReview = (employeePeriodUuid?: string, reviewType?: string, year?: number) => {
+    const viewReview = (employeePeriodUuid?: string,
+                        reviewType?: string, year?: number) => {
         if (employeePeriodUuid && reviewType) {
             navigate(`/review/${reviewType}/reviewUuid/${employeePeriodUuid}`, {
                 state: {employeePeriodUuid, reviewType, year},
@@ -132,7 +117,9 @@ const Dashboard: React.FC = () => {
                         <Col md={6}>
                             <Form.Group>
                                 <Form.Label className="fw-bold">Line Manager</Form.Label>
-                                <Form.Control value={employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : ""} disabled/>
+                                <Form.Control
+                                    value={employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : ""}
+                                    disabled/>
                             </Form.Group>
                         </Col>
                         <Col md={6}>
