@@ -1,7 +1,6 @@
 import * as React from "react";
 import {Education} from "../types/types.d";
 import {useCallback, useEffect, useState} from "react";
-import axios from "axios";
 import {AuthState} from "../config/AuthContext";
 import {toast} from "react-toastify";
 import {useNavigate} from "react-router-dom";
@@ -27,6 +26,7 @@ import {
     TextField,
     Tooltip
 } from "@mui/material";
+import {ADD_EDUCATION, DELETE_EDUCATION, GET_ALL_EDUCATIONS, UPDATE_EDUCATION} from "../../api/Education";
 
 const DEGREE_LIST = [
     {key: "SSC_10TH", value: "SSC/CBSC/10"},
@@ -48,7 +48,6 @@ const EducationPage: React.FC = () => {
     const [openDialogueBox, setOpenDialogueBox] = useState(false);
     const [selectedEducation, setSelectedEducation] = useState<Education | null>(null);
 
-
     const [existingDegree, setExistingDegree] = useState([]);
 
     useEffect(() => {
@@ -61,19 +60,14 @@ const EducationPage: React.FC = () => {
         if (!authentication?.userId || !authentication?.accessToken) return;
 
         try {
-            const response = await axios.get(
-                `http://localhost:8082/api/education/getAll/${authentication.userId}`,
-                {
-                    headers: {Authorization: authentication.accessToken},
-                }
-            );
-            if (response?.data) {
-                setEducations(response.data);
-                const degrees = response.data.map((education: Education) => education.degree);
+            const response = await GET_ALL_EDUCATIONS(authentication.userId);
+            if (null !== response) {
+                setEducations(response);
+                const degrees = response.map((education: Education) => education.degree);
                 setExistingDegree(degrees);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || "Something went wrong");
+            toast.error("Something went wrong, Failed to save education details");
         }
     }, [authentication.userId, authentication.accessToken]);
 
@@ -107,22 +101,10 @@ const EducationPage: React.FC = () => {
     const handleSave = async (uuid: string) => {
         try {
             if (uuid === newUuid) {
-                await axios.post(
-                    `http://localhost:8082/api/education/add`,
-                    editedEducation,
-                    {
-                        headers: {Authorization: authentication.accessToken},
-                    }
-                );
+                await ADD_EDUCATION(editedEducation);
                 toast.success(`Education degree ${editedEducation.degree} with ${editedEducation.schoolName} added successfully`);
             } else {
-                await axios.put(
-                    `http://localhost:8082/api/education/update/${uuid}`,
-                    editedEducation,
-                    {
-                        headers: {Authorization: authentication.accessToken},
-                    }
-                );
+                await UPDATE_EDUCATION(uuid, editedEducation);
                 toast.success("Education details updated successfully!");
             }
             await getEducations();
@@ -131,7 +113,7 @@ const EducationPage: React.FC = () => {
             setEditedEducation({});
             setNewUuid(null);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to save education details.");
+            toast.error("Failed to update education details.");
         }
     };
 
@@ -168,13 +150,11 @@ const EducationPage: React.FC = () => {
     const handleDelete = async () => {
         if (!selectedEducation) return;
         try {
-            await axios.delete(`http://localhost:8082/api/education/delete/${selectedEducation.uuid}`, {
-                headers: {Authorization: authentication.accessToken},
-            });
+            await DELETE_EDUCATION(selectedEducation.uuid);
             toast.success(`Education ${selectedEducation.degree} deleted successfully`);
             await getEducations();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete education details.");
+            toast.error("Failed to delete education details.");
         } finally {
             handleCloseDialogueBox();
         }
