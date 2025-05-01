@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useState, ChangeEvent, FormEvent, useEffect} from "react";
+import {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import {AuthState} from "../config/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
@@ -7,6 +7,7 @@ import {toast} from "react-toastify";
 import {Login} from "../types/types.d";
 import FullPageLoader from "../Loader/FullPageLoader";
 import {LOGIN_API, VALIDATE_TOKEN_API} from "../../api/Auth";
+import {getBrowserInfo} from "../utils/Utils";
 
 const LoginPage: React.FC = () => {
     const {authentication, setAuthentication} = AuthState();
@@ -19,7 +20,14 @@ const LoginPage: React.FC = () => {
 
     const [loading, setLoading] = useState<boolean>(false);
 
+    async function displayBrowserInfo() {
+        const geoData = await getBrowserInfo();
+        console.log("Browser Info:", geoData);
+        console.log("As JSON:", JSON.stringify(geoData, null, 2));
+    }
+
     useEffect(() => {
+        displayBrowserInfo();
         const validate = async () => {
             setLoading(true);
             if (authentication?.userId && authentication?.accessToken) {
