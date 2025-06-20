@@ -3,6 +3,7 @@ export const APPLICATION_URL = `http://localhost:8082/api/`;
 export interface Login {
     email: string;
     password: string;
+    requestQuery: {}
 }
 
 export interface Employee {
@@ -113,4 +114,18 @@ export interface Error {
 export interface ErrorResponse {
     status: String;
     error: Error;
+}
+
+export interface ForgotPasswordRequest {
+    email: string;
+    otp: string;
+    password: string;
+    confirmPassword: string;
+}
+
+export interface ResetPasswordRequest {
+    email: string;
+    oldPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
 }

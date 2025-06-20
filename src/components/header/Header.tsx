@@ -38,7 +38,9 @@ const Header: React.FC<HeaderProps> = ({role}: HeaderProps) => {
                             <NavDropdown title="More" id="basic-nav-dropdown">
                                 <NavDropdown.Item href="/profile">Profile</NavDropdown.Item>
                                 <NavDropdown.Item href="/education">Education</NavDropdown.Item>
-                                <NavDropdown.Item href="#MyView1">Settings</NavDropdown.Item>
+                                <NavDropdown title="Settings" id="basic-nav-dropdown">
+                                    <NavDropdown.Item href="/reset-password">Reset Password</NavDropdown.Item>
+                                </NavDropdown>
                                 <NavDropdown.Divider/>
                                 <NavDropdown.Item href="/logout" className="text-danger">Logout</NavDropdown.Item>
                             </NavDropdown>

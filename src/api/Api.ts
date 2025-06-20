@@ -27,12 +27,14 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        return response;
+    },
     (error: AxiosError) => {
         if (error.response) {
             const status = error.response.status;
             const errorData = error?.response?.data as ErrorResponse;
-            if (status === 404) {
+            if (status === 404 || status === 400) {
                 toast.error(errorData.error.message);
             } else if (status === 401 || status === 403) {
                 toast.error("Session expired. Please login again.");

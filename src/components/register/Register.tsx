@@ -39,7 +39,7 @@ interface Manager {
 }
 
 const Register: React.FC = () => {
-    const { authentication } = AuthState();
+    const {authentication} = AuthState();
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
@@ -81,7 +81,7 @@ const Register: React.FC = () => {
         setLoadingDepartments(true);
         try {
             const response = await axios.get("http://localhost:8082/api/department/getAll", {
-                headers: { Authorization: `${authentication.accessToken}` },
+                headers: {Authorization: `${authentication.accessToken}`},
             });
             setDepartments(response.data);
         } catch (error) {
@@ -96,7 +96,7 @@ const Register: React.FC = () => {
         setLoadingManagers(true);
         try {
             const response = await axios.get("http://localhost:8082/api/employee/get-active-managers", {
-                headers: { Authorization: `${authentication.accessToken}` },
+                headers: {Authorization: `${authentication.accessToken}`},
             });
             setManagers(response.data);
         } catch (error) {
@@ -109,13 +109,13 @@ const Register: React.FC = () => {
     const handleAuthError = (error: any) => {
         const errorCode = error.response?.data?.errorCode;
         if (errorCode === "TOKEN_NOT_PROVIDED" || errorCode === "TOKEN_EXPIRED") {
-            navigate("/", { replace: true });
+            navigate("/", {replace: true});
         }
     };
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        setEmployees((prev) => ({ ...prev, [name]: value }));
+        const {name, value} = event.target;
+        setEmployees((prev) => ({...prev, [name]: value}));
     };
 
     const validateForm = (): boolean => {
@@ -141,7 +141,7 @@ const Register: React.FC = () => {
 
         try {
             const response = await axios.post("http://localhost:8082/api/employee/add", employees, {
-                headers: { Authorization: `${authentication.accessToken}` },
+                headers: {Authorization: `${authentication.accessToken}`},
             });
             if (response.status === 201) {
                 toast.success("Employee added successfully");

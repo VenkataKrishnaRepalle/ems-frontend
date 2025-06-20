@@ -1,13 +1,15 @@
 import * as React from "react";
 import {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import {AuthState} from "../config/AuthContext";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, Link as RouterLink} from "react-router-dom";
 import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
 import {toast} from "react-toastify";
 import {Login} from "../types/types.d";
 import FullPageLoader from "../Loader/FullPageLoader";
 import {LOGIN_API, VALIDATE_TOKEN_API} from "../../api/Auth";
 import {getBrowserInfo} from "../utils/Utils";
+import {Typography, Link as MuiLink} from "@mui/material";
+
 
 const LoginPage: React.FC = () => {
     const {authentication, setAuthentication} = AuthState();
@@ -15,7 +17,8 @@ const LoginPage: React.FC = () => {
 
     const [formData, setFormData] = useState<Login>({
         email: "",
-        password: ""
+        password: "",
+        requestQuery: {}
     });
 
     const [loading, setLoading] = useState<boolean>(false);
@@ -24,6 +27,10 @@ const LoginPage: React.FC = () => {
         const geoData = await getBrowserInfo();
         console.log("Browser Info:", geoData);
         console.log("As JSON:", JSON.stringify(geoData, null, 2));
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            requestQuery: geoData
+        }));
     }
 
     useEffect(() => {
@@ -119,6 +126,18 @@ const LoginPage: React.FC = () => {
                                     </Form.Control.Feedback>
                                 </FloatingLabel>
                                 <Button className="mb-3 w-100" variant="primary" type="submit">Login</Button>
+                                <Typography variant="body2" align="center" sx={{mt: 2}}>
+                                    Forgot your password?{' '}
+                                    <MuiLink component={RouterLink} to="/forgot-password">
+                                        Click here
+                                    </MuiLink>
+                                </Typography>
+                                <Typography variant="body2" align="center" sx={{mt: 2}}>
+                                    Reset Your Password? {' '}
+                                    <MuiLink component={RouterLink} to="/reset-password">
+                                        Click here
+                                    </MuiLink>
+                                </Typography>
                             </Form>
                         </Col>
                     </Row>

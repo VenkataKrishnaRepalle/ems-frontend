@@ -15,6 +15,8 @@ import {AuthState} from "./components/config/AuthContext";
 import Profile from "./components/profile/profile";
 import Education from "./components/education/Education";
 import Attendance from "./components/attendance/Attendance";
+import ForgotPassword from "./components/auth/ForgotPassword";
+import ResetPassword from "./components/auth/ResetPassword";
 
 const App: React.FC = () => {
     const {authentication} = AuthState();
@@ -38,6 +40,8 @@ const App: React.FC = () => {
                 {/*<Route path="/team-view" element={<TeamView />} />*/}
                 <Route path="/logout" element={<Logout/>}/>
                 <Route path="/review/:reviewType/reviewUuid/:employeePeriodUuid" element={<Review/>}/>
+                <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                <Route path="/reset-password" element={<ResetPassword/>}/>
             </Routes>
         </div>
     );
