@@ -10,7 +10,6 @@ import {LOGIN_API, VALIDATE_TOKEN_API} from "../../api/Auth";
 import {getBrowserInfo} from "../utils/Utils";
 import {Typography, Link as MuiLink} from "@mui/material";
 
-
 const LoginPage: React.FC = () => {
     const {authentication, setAuthentication} = AuthState();
     const navigate = useNavigate();
@@ -25,8 +24,6 @@ const LoginPage: React.FC = () => {
 
     async function displayBrowserInfo() {
         const geoData = await getBrowserInfo();
-        console.log("Browser Info:", geoData);
-        console.log("As JSON:", JSON.stringify(geoData, null, 2));
         setFormData((prevFormData) => ({
             ...prevFormData,
             requestQuery: geoData
@@ -34,7 +31,6 @@ const LoginPage: React.FC = () => {
     }
 
     useEffect(() => {
-        displayBrowserInfo();
         const validate = async () => {
             setLoading(true);
             if (authentication?.userId && authentication?.accessToken) {
@@ -51,6 +47,7 @@ const LoginPage: React.FC = () => {
         };
 
         validate();
+        displayBrowserInfo();
     }, [authentication, navigate]);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +61,7 @@ const LoginPage: React.FC = () => {
 
         if (!form.checkValidity()) {
             event.stopPropagation();
+            toast.error("Please fill out the form correctly.");
             return;
         }
 
@@ -81,7 +79,14 @@ const LoginPage: React.FC = () => {
                 navigate("/dashboard");
             }
         } catch (error) {
-            toast.error("Login failed. Please check your credentials.");
+            if (error?.response?.data?.error?.code === "MAX_LOGIN_ATTEMPT_REACHED") {
+                toast.info(`Navigating to sessions page with state: { maxLoginAttempts: true, email: ${formData?.email} }`);
+                setTimeout(() => {
+                    navigate("/sessions", {state: {maxLoginAttempts: true, email: formData?.email}});
+                }, 0);
+            } else {
+                toast.error("Login failed. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -90,59 +95,57 @@ const LoginPage: React.FC = () => {
     return (
         <>
             <FullPageLoader loading={loading}/>
-            {!loading &&
-                <Container className="d-flex justify-content-center align-items-center bg-light min-vh-100">
-                    <Row className="w-100 justify-content-center">
-                        <Col xs={12} sm={8} md={6} lg={5}>
-                            <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>
-                                <h1 className="mb-4">Login</h1>
-                                <FloatingLabel className="mb-3" controlId="email" label="Email">
-                                    <Form.Control
-                                        type="email"
-                                        placeholder="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        autoFocus
-                                        required
-                                    />
-                                    <Form.Control.Feedback className="text-start" type="invalid">
-                                        Please enter a valid email
-                                    </Form.Control.Feedback>
-                                </FloatingLabel>
-                                <FloatingLabel className="mb-3" controlId="Password" label="Password">
-                                    <Form.Control
-                                        type="password"
-                                        placeholder="Enter Password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        minLength={8}
-                                        maxLength={25}
-                                        required
-                                    />
-                                    <Form.Control.Feedback className="text-start" type="invalid">
-                                        Please enter a valid password
-                                    </Form.Control.Feedback>
-                                </FloatingLabel>
-                                <Button className="mb-3 w-100" variant="primary" type="submit">Login</Button>
-                                <Typography variant="body2" align="center" sx={{mt: 2}}>
-                                    Forgot your password?{' '}
-                                    <MuiLink component={RouterLink} to="/forgot-password">
-                                        Click here
-                                    </MuiLink>
-                                </Typography>
-                                <Typography variant="body2" align="center" sx={{mt: 2}}>
-                                    Reset Your Password? {' '}
-                                    <MuiLink component={RouterLink} to="/reset-password">
-                                        Click here
-                                    </MuiLink>
-                                </Typography>
-                            </Form>
-                        </Col>
-                    </Row>
-                </Container>
-            }
+            <Container className="d-flex justify-content-center align-items-center bg-light min-vh-100">
+                <Row className="w-100 justify-content-center">
+                    <Col xs={12} sm={8} md={6} lg={5}>
+                        <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>
+                            <h1 className="mb-4">Login</h1>
+                            <FloatingLabel className="mb-3" controlId="email" label="Email">
+                                <Form.Control
+                                    type="email"
+                                    placeholder="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    autoFocus
+                                    required
+                                />
+                                <Form.Control.Feedback className="text-start" type="invalid">
+                                    Please enter a valid email
+                                </Form.Control.Feedback>
+                            </FloatingLabel>
+                            <FloatingLabel className="mb-3" controlId="Password" label="Password">
+                                <Form.Control
+                                    type="password"
+                                    placeholder="Enter Password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
+                                    minLength={8}
+                                    maxLength={25}
+                                    required
+                                />
+                                <Form.Control.Feedback className="text-start" type="invalid">
+                                    Please enter a valid password
+                                </Form.Control.Feedback>
+                            </FloatingLabel>
+                            <Button className="mb-3 w-100" variant="primary" type="submit">Login</Button>
+                            <Typography variant="body2" align="center" sx={{mt: 2}}>
+                                Forgot your password?{' '}
+                                <MuiLink component={RouterLink} to="/forgot-password">
+                                    Click here
+                                </MuiLink>
+                            </Typography>
+                            <Typography variant="body2" align="center" sx={{mt: 2}}>
+                                Reset Your Password? {' '}
+                                <MuiLink component={RouterLink} to="/reset-password">
+                                    Click here
+                                </MuiLink>
+                            </Typography>
+                        </Form>
+                    </Col>
+                </Row>
+            </Container>
         </>
     );
 };
