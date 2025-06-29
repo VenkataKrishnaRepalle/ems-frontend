@@ -24,10 +24,15 @@ const LoginPage: React.FC = () => {
 
     async function displayBrowserInfo() {
         const geoData = await getBrowserInfo();
-        setFormData((prevFormData) => ({
-            ...prevFormData,
-            requestQuery: geoData
-        }));
+        if (geoData !== null) {
+            setFormData((prevFormData) => ({
+                ...prevFormData,
+                requestQuery: {
+                    ...geoData,
+                    location: geoData.location || undefined, // Exclude location if null
+                },
+            }));
+        }
     }
 
     useEffect(() => {
@@ -68,12 +73,23 @@ const LoginPage: React.FC = () => {
         setLoading(true);
 
         try {
-            const response = await LOGIN_API(formData);
+            const { requestQuery, ...restFormData } = formData;
+            const payload = requestQuery
+                ? {
+                    ...restFormData,
+                    requestQuery: Object.fromEntries(
+                        Object.entries(requestQuery).filter(([_, value]) => value !== null)
+                    ),
+                }
+                : restFormData;
+
+            console.log("Form Data:", payload);
+            const response = await LOGIN_API(payload);
             if (response !== null) {
                 setAuthentication({
                     userId: response.employeeId,
                     accessToken: `${response.tokenType} ${response.accessToken}`,
-                    roles: response.roles
+                    roles: response.roles,
                 });
                 toast.success("Login successful as " + response.email);
                 navigate("/dashboard");
@@ -82,7 +98,7 @@ const LoginPage: React.FC = () => {
             if (error?.response?.data?.error?.code === "MAX_LOGIN_ATTEMPT_REACHED") {
                 toast.info(`Navigating to sessions page with state: { maxLoginAttempts: true, email: ${formData?.email} }`);
                 setTimeout(() => {
-                    navigate("/sessions", {state: {maxLoginAttempts: true, email: formData?.email}});
+                    navigate("/sessions", { state: { maxLoginAttempts: true, email: formData?.email } });
                 }, 0);
             } else {
                 toast.error("Login failed. Please try again.");
@@ -130,19 +146,19 @@ const LoginPage: React.FC = () => {
                                 </Form.Control.Feedback>
                             </FloatingLabel>
                             <Button className="mb-3 w-100" variant="primary" type="submit">Login</Button>
-                            <Typography variant="body2" align="center" sx={{mt: 2}}>
-                                Forgot your password?{' '}
-                                <MuiLink component={RouterLink} to="/forgot-password">
-                                    Click here
-                                </MuiLink>
-                            </Typography>
-                            <Typography variant="body2" align="center" sx={{mt: 2}}>
-                                Reset Your Password? {' '}
-                                <MuiLink component={RouterLink} to="/reset-password">
-                                    Click here
-                                </MuiLink>
-                            </Typography>
                         </Form>
+                        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                            Forgot your password?{" "}
+                            <MuiLink component="button" onClick={() => navigate("/forgot-password")}>
+                                Click here
+                            </MuiLink>
+                        </Typography>
+                        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                            Reset Your Password?{" "}
+                            <MuiLink component="button" onClick={() => navigate("/reset-password")}>
+                                Click here
+                            </MuiLink>
+                        </Typography>
                     </Col>
                 </Row>
             </Container>

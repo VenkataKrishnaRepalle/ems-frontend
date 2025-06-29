@@ -1,7 +1,7 @@
-import {ForgotPasswordRequest, Login, ResetPasswordRequest} from "../components/types/types.d";
+import {ForgotPasswordRequest, ResetPasswordRequest} from "../components/types/types.d";
 import api from "./Api";
 
-export const LOGIN_API = async (login: Login) => {
+export const LOGIN_API = async (login: any) => {
     const response = await api.post("/auth/login", login);
     return response.data;
 }
