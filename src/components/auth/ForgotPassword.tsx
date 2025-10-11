@@ -1,6 +1,6 @@
 import {ChangeEvent, FormEvent, useRef, useState} from "react";
 import {ForgotPasswordRequest} from "../types/types.d";
-import FullPageLoader from "../Loader/FullPageLoader";
+import FullPageLoader from "../loader/FullPageLoader";
 import {Button, Col, Container, FloatingLabel, Form, InputGroup, Row} from "react-bootstrap";
 import * as React from "react";
 import {FORGOT_PASSWORD_API, SEND_OTP_API, VERIFY_EMAIL_API} from "../../api/Auth";

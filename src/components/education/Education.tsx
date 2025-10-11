@@ -50,15 +50,8 @@ const EducationPage: React.FC = () => {
 
     const [existingDegree, setExistingDegree] = useState([]);
 
-    useEffect(() => {
-        if (!authentication?.accessToken) {
-            navigate("/");
-        }
-    }, [authentication, navigate]);
 
     const getEducations = useCallback(async () => {
-        if (!authentication?.userId || !authentication?.accessToken) return;
-
         try {
             const response = await GET_ALL_EDUCATIONS(authentication.userId);
             if (null !== response) {
@@ -69,7 +62,7 @@ const EducationPage: React.FC = () => {
         } catch (error) {
             toast.error("Something went wrong, Failed to save education details");
         }
-    }, [authentication.userId, authentication.accessToken]);
+    }, [authentication.userId]);
 
     useEffect(() => {
         getEducations();
@@ -189,7 +182,7 @@ const EducationPage: React.FC = () => {
                                 <TableRow key={education.uuid}>
                                     <TableCell component="th" scope="row">
                                         {editMode === education.uuid ? (
-                                            <TextField
+                                            <TextField type="text" required
                                                 value={editedEducation.schoolName || ""}
                                                 onChange={(e) => handleChange(e, "schoolName")}/>
                                         ) : (
@@ -224,7 +217,7 @@ const EducationPage: React.FC = () => {
 
                                     <TableCell align="right">
                                         {editMode === education.uuid ? (
-                                            <TextField
+                                            <TextField type="text" required
                                                 value={editedEducation.grade || ""}
                                                 onChange={(e) => handleChange(e, "grade")}/>
                                         ) : (

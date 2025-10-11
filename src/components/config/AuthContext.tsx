@@ -1,13 +1,15 @@
 import * as React from "react";
-import {createContext, useContext, useEffect, useState, ReactNode} from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
+import {ME_API} from "../../api/Employee";
 
 interface AuthContextType {
     authentication: Authentication | null;
     setAuthentication: React.Dispatch<React.SetStateAction<Authentication | null>>;
+    checkAuth: () => Promise<void>;
 }
 
 interface Authentication {
-    accessToken: string;
     userId: string;
     roles: [string];
 }
@@ -18,22 +20,34 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
-    const [authentication, setAuthentication] = useState<Authentication | null>(() => {
-        const storedAuthentication = localStorage.getItem('authentication');
-        return storedAuthentication ? JSON.parse(storedAuthentication) as Authentication : null;
-    });
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+    const [authentication, setAuthentication] = useState<Authentication | null>(null);
+    const location = useLocation();
+
+    const publicRoutes = ['/', '/login', '/forgot-password', '/reset-password'];
+
+    const checkAuth = async () => {
+        try {
+            const response = await ME_API();
+            if (response) {
+                setAuthentication({ userId: response.employee.uuid, roles: response.roles });
+            } else {
+                setAuthentication(null);
+            }
+        } catch {
+            setAuthentication(null);
+        }
+    };
 
     useEffect(() => {
-        if (authentication) {
-            localStorage.setItem('authentication', JSON.stringify(authentication));
-        } else {
-            localStorage.removeItem('authentication');
+        // Only check auth if not on a public route
+        if (!publicRoutes.includes(location.pathname)) {
+            checkAuth();
         }
-    }, [authentication]);
+    }, [location.pathname, publicRoutes]);
 
     return (
-        <AuthContext.Provider value={{authentication, setAuthentication}}>
+        <AuthContext.Provider value={{ authentication, setAuthentication, checkAuth }}>
             {children}
         </AuthContext.Provider>
     );

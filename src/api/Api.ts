@@ -10,17 +10,11 @@ const api: AxiosInstance = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
+    withCredentials: true, // Ensure all requests include cookies
 });
 
 api.interceptors.request.use(
     (config) => {
-        const authData = localStorage.getItem("authentication");
-        if (authData) {
-            const token = JSON.parse(authData)?.accessToken;
-            if (token) {
-                config.headers["Authorization"] = token;
-            }
-        }
         return config;
     },
     (error) => Promise.reject(error)
@@ -38,8 +32,7 @@ api.interceptors.response.use(
                 toast.error(errorData.error.message);
             } else if (status === 401 || status === 403) {
                 toast.error("Session expired. Please login again.");
-                localStorage.removeItem("authentication");
-                window.location.href = "/";
+                // window.location.href = "/";
             } else if (status >= 500) {
                 toast.error("Server error. Please try again later.");
             } else {

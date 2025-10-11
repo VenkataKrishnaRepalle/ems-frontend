@@ -15,9 +15,6 @@ const Header: React.FC<HeaderProps> = ({role}: HeaderProps) => {
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
     useEffect(() => {
-        if (!authentication?.accessToken) {
-            return;
-        }
         setIsAdmin(authentication.roles.includes("ADMIN"));
         setIsManager(authentication.roles.includes("MANAGER"));
     }, [authentication, navigate]);

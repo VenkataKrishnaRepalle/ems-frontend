@@ -2,11 +2,12 @@ import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthState } from "../config/AuthContext";
-import axios from "axios";
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
 import { Form } from "react-bootstrap";
 import { toast } from "react-toastify";
 import {TimelineAndReview, Review} from "../types/types.d";
+import {GET_EMPLOYEE_PERIOD_BY_TYPE} from "../../api/Timeline";
+import {ADD_REVIEW_API} from "../../api/Review";
 
 const AddReview = () => {
     const location = useLocation();
@@ -19,19 +20,12 @@ const AddReview = () => {
     const [isCompleted, setIsCompleted] = useState(false);
 
     useEffect(() => {
-        if (!authentication?.accessToken) {
-            navigate("/");
-        }
+
     }, [authentication, navigate]);
 
     const fetchReview = useCallback(async () => {
-        if (!authentication?.accessToken || !state.employeePeriodUuid || !state.reviewType) return;
-
         try {
-            const response = await axios.get<TimelineAndReview>(
-                `http://localhost:8082/api/timeline/getByEmployeePeriodId/${state.employeePeriodUuid}/type/${state.reviewType}`,
-                { headers: { Authorization: `${authentication.accessToken}` } }
-            );
+            const response = await GET_EMPLOYEE_PERIOD_BY_TYPE(state.employeePeriodUuid, state.reviewType);
             setTimeline(response.data);
             setReview({ ...response.data.review, timelineUuid: response.data.uuid, type: response.data.type });
             if (response.data.status === "COMPLETED") {
@@ -44,7 +38,7 @@ const AddReview = () => {
                 console.error("Error fetching review:", error);
             }
         }
-    }, [navigate, authentication?.accessToken]);
+    }, [navigate, state.reviewType, state.employeePeriodUuid]);
 
     useEffect(() => {
         fetchReview();
@@ -66,14 +60,10 @@ const AddReview = () => {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!review) return;
+        if (!review || !authentication?.userId) return;
 
         try {
-            const submitReview = await axios.post(
-                `http://localhost:8082/api/reviews/add/${authentication?.userId}`,
-                review,
-                { headers: { Authorization: `${authentication.accessToken}` } }
-            );
+            const submitReview = await ADD_REVIEW_API(authentication.userId, review);
 
             if (submitReview.status === 201) {
                 toast.success("Review submitted successfully");

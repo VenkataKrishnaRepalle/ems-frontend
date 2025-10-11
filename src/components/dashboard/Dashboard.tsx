@@ -5,8 +5,7 @@ import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
 import {Box, Button, Card} from "@mui/material";
 import {Employee, EmployeePeriodAndTimeline} from "../types/types.d";
-import useValidateToken from "../auth/ValidateToken";
-import FullPageLoader from "../Loader/FullPageLoader";
+import FullPageLoader from "../loader/FullPageLoader";
 import {ME_API} from "../../api/Employee";
 import {GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR} from "../../api/EmployeePeriod";
 
@@ -27,42 +26,39 @@ const Dashboard: React.FC = () => {
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>();
 
-    useValidateToken();
-
-    const findEmployeePeriodByYear = useCallback(async (year: number) => {
+    const findEmployeePeriodByYear = useCallback(async (employeeUuid: string, year: number) => {
         if (year === selectedYear) {
             return;
         }
         try {
             setSelectedYear(year);
-            const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(authentication.userId, year);
+            const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(employeeUuid, year);
             setEmployeePeriod(cyclesRes);
         } catch (error: any) {
             toast.error(`Error fetching employee period information for year: ${selectedYear}`);
         }
-    }, [selectedYear, authentication.userId]);
+    }, [selectedYear]);
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-
-            const [employeeRes, yearsRes] = await Promise.all([ME_API(), GET_ALL_ELIGIBLE_YEARS(authentication.userId)]);
-
+            const employeeRes = await ME_API();
             if (null !== employeeRes) {
-                setEmployee(employeeRes);
-                if (!employeeRes.managerUuid) {
+                console.log(employeeRes.employee);
+                setEmployee(employeeRes?.employee);
+                if (!employeeRes?.employee?.managerUuid) {
                     toast.info("You do not have a Line Manager.");
                 }
-                if (employeeRes.leavingDate && new Date(employeeRes.leavingDate) <= new Date()) {
+                if (employeeRes?.employee.leavingDate && new Date(employeeRes?.employee.leavingDate) <= new Date()) {
                     toast.warning("Employee is Leaving");
                 }
             }
-
+            const yearsRes = await GET_ALL_ELIGIBLE_YEARS(employee.uuid);
             if (yearsRes?.length) {
                 setYears(yearsRes);
                 const year = yearsRes[0];
                 setSelectedYear(year);
-                await findEmployeePeriodByYear(year);
+                await findEmployeePeriodByYear(employee.uuid, year);
             } else {
                 toast.warning("Colleague not assigned with cycle.");
             }
@@ -71,18 +67,20 @@ const Dashboard: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [authentication.accessToken, authentication.userId]);
+    }, [findEmployeePeriodByYear]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (authentication && authentication.userId) {
+            console.log("redirected to dashboard");
+            fetchData();
+        }
+    }, [authentication, fetchData]);
 
     const formatDate = (dateString?: string): string => {
         return dateString ? new Date(dateString).toDateString() : "N/A";
     };
 
-    const viewReview = (employeePeriodUuid?: string,
-                        reviewType?: string, year?: number) => {
+    const viewReview = (employeePeriodUuid?: string, reviewType?: string, year?: number) => {
         if (employeePeriodUuid && reviewType) {
             navigate(`/review/${reviewType}/reviewUuid/${employeePeriodUuid}`, {
                 state: {employeePeriodUuid, reviewType, year},
@@ -103,13 +101,13 @@ const Dashboard: React.FC = () => {
                         <Col md={6}>
                             <Form.Group>
                                 <Form.Label className="fw-bold">Full Name</Form.Label>
-                                <Form.Control value={`${employee.firstName} ${employee.lastName}`} disabled/>
+                                <Form.Control value={`${employee?.firstName} ${employee?.lastName}`} disabled/>
                             </Form.Group>
                         </Col>
                         <Col md={6}>
                             <Form.Group>
                                 <Form.Label className="fw-bold">Email</Form.Label>
-                                <Form.Control value={employee.email || "N/A"} disabled/>
+                                <Form.Control value={employee?.email} disabled/>
                             </Form.Group>
                         </Col>
                     </Row>
@@ -125,7 +123,7 @@ const Dashboard: React.FC = () => {
                         <Col md={6}>
                             <Form.Group>
                                 <Form.Label className="fw-bold">Phone Number</Form.Label>
-                                <Form.Control value={employee.phoneNumber || "N/A"} disabled/>
+                                <Form.Control value={employee?.phoneNumber} disabled/>
                             </Form.Group>
                         </Col>
                     </Row>
@@ -137,7 +135,7 @@ const Dashboard: React.FC = () => {
                     <h3 className="text-center mb-4">Quarterly Reviews</h3>
                     <Box display="flex" justifyContent="center" alignItems="center" gap={2} flexWrap="wrap">
                         {years.map((year, index) => (
-                            <Button key={index} onClick={() => findEmployeePeriodByYear(year)}
+                            <Button key={index} onClick={() => findEmployeePeriodByYear(employee.uuid, year)}
                                     variant="contained">{year === new Date().getFullYear() ? year + " (Current Year)" : year}</Button>
                         ))}
                     </Box>

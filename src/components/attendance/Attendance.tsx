@@ -1,29 +1,23 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {APPLICATION_URL, Attendance} from "../types/types.d";
-import axios from "axios";
-import {AuthState} from "../config/AuthContext";
+import {Attendance} from "../types/types.d";
 import {toast} from "react-toastify";
 import useValidateToken from "../auth/ValidateToken";
-
-const ATTENDANCE_PATH = `attendance/`;
+import {GET_ALL_ATTENDANCE_API} from "../../api/Attendance";
+import {AuthState} from "../config/AuthContext";
 const AttendancePage: React.FC = () => {
-    const {authentication} = AuthState();
     const [attendances, setAttendances] = useState<Attendance[]>();
+    const { authentication } = AuthState();
 
     useValidateToken();
 
     const getAllAttendances = useCallback(async () => {
         try {
-            const attendances = await axios.get(APPLICATION_URL + ATTENDANCE_PATH + `get/${authentication.userId}`, {
-                headers: {
-                    Authorization: `${authentication.accessToken}`,
-                }
-            });
+            const attendances = await GET_ALL_ATTENDANCE_API(authentication?.userId);
             setAttendances(attendances.data);
         } catch (error) {
             toast.error(error.response?.data?.errorCode)
         }
-    }, [authentication.userId, authentication.accessToken]);
+    }, []);
 
     useEffect(() => {
         getAllAttendances();

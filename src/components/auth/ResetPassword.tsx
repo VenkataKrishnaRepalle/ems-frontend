@@ -1,7 +1,7 @@
 import React, {ChangeEvent, FormEvent, useState} from "react";
 import {Link as RouterLink, useNavigate} from "react-router-dom";
 import {ResetPasswordRequest} from "../types/types.d";
-import FullPageLoader from "../Loader/FullPageLoader";
+import FullPageLoader from "../loader/FullPageLoader";
 import {Button, Col, Container, FloatingLabel, Form, InputGroup, Row} from "react-bootstrap";
 import {RESET_PASSWORD_API, VERIFY_EMAIL_API} from "../../api/Auth";
 import {toast} from "react-toastify";

@@ -5,35 +5,24 @@ import { AuthState } from "../config/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {Employee} from "../types/types.d";
+import {ME_API} from "../../api/Employee";
 
 const Profile = () => {
     const navigate = useNavigate();
     const { authentication } = AuthState();
     const [employee, setEmployee] = useState<Employee | null>(null);
 
-    useEffect(() => {
-        if (!authentication?.accessToken) {
-            navigate("/");
-        }
-    }, [authentication, navigate]);
-
     const getProfile = useCallback(async () => {
-        if (!authentication?.accessToken) return;
 
         try {
-            const profile = await axios.get<Employee>("http://localhost:8082/api/employee/me", {
-                headers: { Authorization: `${authentication?.accessToken}` },
-            });
-
-            if (profile.status === 200) {
-                setEmployee(profile.data);
-            }
+            const profile = await ME_API();
+            setEmployee(profile?.employee);
         } catch (error: any) {
             if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
                 navigate("/");
             }
         }
-    }, [authentication?.accessToken, navigate]);
+    }, [navigate]);
 
     useEffect(() => {
         getProfile();

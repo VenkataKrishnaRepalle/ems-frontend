@@ -5,18 +5,16 @@ import {toast} from "react-toastify";
 import {VALIDATE_TOKEN_API} from "../../api/Auth";
 
 const useValidateToken = () => {
-    const {authentication} = AuthState();
-    const {setAuthentication} = AuthState();
+    const {authentication, setAuthentication} = AuthState();
     const navigate = useNavigate();
 
     useEffect(() => {
         const validate = async () => {
-            try {
-                if (!authentication?.accessToken || !authentication?.userId) {
-                    navigate("/");
-                    return;
-                }
+            if (!authentication?.userId) {
+                return;
+            }
 
+            try {
                 const data = await VALIDATE_TOKEN_API(authentication.userId);
                 if (data?.expired === true || data?.TOKEN_NOT_PROVIDED === true) {
                     setAuthentication(null);
@@ -26,6 +24,8 @@ const useValidateToken = () => {
                     navigate("/");
                 }
             } catch (error) {
+                setAuthentication(null);
+                localStorage.removeItem("authentication");
                 navigate("/");
             }
         };

@@ -7,11 +7,13 @@ export interface Login {
 }
 
 export interface Employee {
+    uuid: string;
     firstName: string;
     lastName: string;
     gender: string;
     dateOfBirth: string;
     phoneNumber: string;
+    username: string;
     email: string;
     department: string;
     managerUuid: string;
@@ -21,6 +23,35 @@ export interface Employee {
     joiningDate: string;
     leavingDate: string;
     status: string;
+}
+
+export interface EmployeeMeResponse {
+    employee: Employee;
+    roles: [string];
+}
+
+export interface EmployeeRequest {
+    firstName: string;
+    lastName: string;
+    gender: string;
+    dateOfBirth: string;
+    phoneNumber: string;
+    email: string;
+    joiningDate: string;
+    leavingDate?: string;
+    departmentName: string;
+    isManager: string;
+    managerUuid: string;
+    jobTitle: string;
+    password: string;
+    confirmPassword: string;
+}
+
+export interface Manager {
+    uuid: string;
+    firstName: string;
+    lastName: string;
+    email: string;
 }
 
 export interface Department {

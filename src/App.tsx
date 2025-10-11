@@ -1,5 +1,4 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import {Route, Routes, useNavigate} from "react-router-dom";
@@ -17,47 +16,15 @@ import Education from "./components/education/Education";
 import Attendance from "./components/attendance/Attendance";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import ResetPassword from "./components/auth/ResetPassword";
-import {VALIDATE_TOKEN_API} from "./api/Auth";
 import LoginLimitExceedPage from "./components/auth/LoginLimitExceedPage";
 
 const App: React.FC = () => {
-    const {authentication, setAuthentication} = AuthState();
-    const navigate = useNavigate();
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-
-    useEffect(() => {
-        const validate = async () => {
-            try {
-                if (!authentication?.accessToken || !authentication?.userId) {
-                    setIsLoggedIn(false);
-                    navigate("/");
-                    return;
-                }
-
-                const data = await VALIDATE_TOKEN_API(authentication.userId);
-                if (data?.expired || data?.TOKEN_NOT_PROVIDED) {
-                    setAuthentication(null);
-                    localStorage.removeItem("authentication");
-                    toast.dismiss();
-                    setIsLoggedIn(false);
-                    navigate("/");
-                } else if (!data?.expired && authentication?.userId) {
-                    setIsLoggedIn(true);
-                }
-            } catch (error) {
-                console.error("Validation error:", error);
-                setIsLoggedIn(false);
-                navigate("/");
-            }
-        };
-
-        validate();
-    }, [authentication, navigate, setAuthentication]);
+    const {authentication} = AuthState();
 
     return (
         <div className="App">
             <ToastContainer/>
-            {isLoggedIn && <Header role="search"/>}
+            {authentication && authentication.userId && <Header role="search"/>}
             <Routes>
                 <Route path="/" element={<Login/>}/>
                 <Route path="/profile" element={<Profile/>}/>

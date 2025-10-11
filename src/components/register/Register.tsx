@@ -7,43 +7,21 @@ import {
     Box,
     Autocomplete, InputAdornment, IconButton,
 } from "@mui/material";
-import axios from "axios";
 import {useNavigate} from "react-router-dom";
 import {AuthState} from "../config/AuthContext";
 import {Visibility, VisibilityOff} from "@mui/icons-material";
 import {toast} from "react-toastify";
-import {Department} from "../types/types.d";
+import {Department, EmployeeRequest, Manager} from "../types/types.d";
+import {GET_ALL_DEPARTMENTS_API} from "../../api/Department";
+import {ADD_EMPLOYEE, GET_ACTIVE_MANAGERS} from "../../api/Employee";
 
-interface Employee {
-    firstName: string;
-    lastName: string;
-    gender: string;
-    dateOfBirth: string;
-    phoneNumber: string;
-    email: string;
-    joiningDate: string;
-    leavingDate?: string;
-    departmentName: string;
-    isManager: string;
-    managerUuid: string;
-    jobTitle: string;
-    password: string;
-    confirmPassword: string;
-}
-
-interface Manager {
-    uuid: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-}
 
 const Register: React.FC = () => {
     const {authentication} = AuthState();
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-    const [employees, setEmployees] = useState<Employee>({
+    const [employee, setEmployee] = useState<EmployeeRequest>({
         firstName: "",
         lastName: "",
         gender: "",
@@ -69,21 +47,17 @@ const Register: React.FC = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (!authentication?.accessToken) {
-            navigate("/");
-        } else if (authentication.roles.includes("ADMIN")) {
+        if (authentication.roles.includes("ADMIN")) {
             setIsAdmin(true);
         }
-    }, [authentication, navigate]);
+    }, [authentication]);
 
     const fetchDepartments = async () => {
         if (departments.length > 0) return;
         setLoadingDepartments(true);
         try {
-            const response = await axios.get("http://localhost:8082/api/department/getAll", {
-                headers: {Authorization: `${authentication.accessToken}`},
-            });
-            setDepartments(response.data);
+            const response = await GET_ALL_DEPARTMENTS_API();
+            setDepartments(response);
         } catch (error) {
             handleAuthError(error);
         } finally {
@@ -95,10 +69,8 @@ const Register: React.FC = () => {
         if (managers.length > 0) return;
         setLoadingManagers(true);
         try {
-            const response = await axios.get("http://localhost:8082/api/employee/get-active-managers", {
-                headers: {Authorization: `${authentication.accessToken}`},
-            });
-            setManagers(response.data);
+            const response = await GET_ACTIVE_MANAGERS();
+            setManagers(response);
         } catch (error) {
             handleAuthError(error);
         } finally {
@@ -115,21 +87,21 @@ const Register: React.FC = () => {
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;
-        setEmployees((prev) => ({...prev, [name]: value}));
+        setEmployee((prev) => ({...prev, [name]: value}));
     };
 
     const validateForm = (): boolean => {
         const newErrors: Record<string, string> = {};
-        if (!employees.firstName) newErrors.firstName = "First name is required.";
-        if (!employees.lastName) newErrors.lastName = "Last name is required.";
-        if (!employees.gender) newErrors.gender = "Gender is required.";
-        if (!employees.email || !/\S+@\S+\.\S+/.test(employees.email)) newErrors.email = "Valid email is required.";
-        if (!employees.phoneNumber || !/^\d{10}$/.test(employees.phoneNumber)) newErrors.phoneNumber = "Valid phone number is required (10 digits).";
-        if (!employees.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
-        if (!employees.joiningDate) newErrors.joiningDate = "Joining date is required.";
-        if (!employees.isManager) newErrors.isManager = "Manager status is required.";
-        if (!employees.password || employees.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
-        if (employees.password !== employees.confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
+        if (!employee.firstName) newErrors.firstName = "First name is required.";
+        if (!employee.lastName) newErrors.lastName = "Last name is required.";
+        if (!employee.gender) newErrors.gender = "Gender is required.";
+        if (!employee.email || !/\S+@\S+\.\S+/.test(employee.email)) newErrors.email = "Valid email is required.";
+        if (!employee.phoneNumber || !/^\d{10}$/.test(employee.phoneNumber)) newErrors.phoneNumber = "Valid phone number is required (10 digits).";
+        if (!employee.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
+        if (!employee.joiningDate) newErrors.joiningDate = "Joining date is required.";
+        if (!employee.isManager) newErrors.isManager = "Manager status is required.";
+        if (!employee.password || employee.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
+        if (employee.password !== employee.confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -140,9 +112,7 @@ const Register: React.FC = () => {
         if (!validateForm()) return;
 
         try {
-            const response = await axios.post("http://localhost:8082/api/employee/add", employees, {
-                headers: {Authorization: `${authentication.accessToken}`},
-            });
+            const response = await ADD_EMPLOYEE(employee);
             if (response.status === 201) {
                 toast.success("Employee added successfully");
                 navigate("/dashboard");
@@ -201,8 +171,8 @@ const Register: React.FC = () => {
                             ]}
                             getOptionLabel={(option) => option.label}
                             onChange={(_event, newValue) => {
-                                setEmployees({
-                                    ...employees,
+                                setEmployee({
+                                    ...employee,
                                     gender: newValue ? newValue.value : ""
                                 });
                             }}
@@ -270,8 +240,8 @@ const Register: React.FC = () => {
                             onChange={(_event, newValue) => {
                                 const departmentValid = newValue && newValue.value;
 
-                                setEmployees({
-                                    ...employees,
+                                setEmployee({
+                                    ...employee,
                                     departmentName: departmentValid ? newValue.value : "",
                                 });
                             }}
@@ -294,8 +264,8 @@ const Register: React.FC = () => {
                             ]}
                             getOptionLabel={(option) => option.label}
                             onChange={(_event, newValue) => {
-                                setEmployees({
-                                    ...employees,
+                                setEmployee({
+                                    ...employee,
                                     isManager: newValue ? newValue.value : ""
                                 });
 
@@ -320,8 +290,8 @@ const Register: React.FC = () => {
                             loading={loadingManagers}
                             onFocus={fetchManagers}
                             onChange={(_event, newValue) => {
-                                setEmployees({
-                                    ...employees,
+                                setEmployee({
+                                    ...employee,
                                     managerUuid: newValue ? newValue.uuid : "",
                                 });
                             }}
@@ -355,8 +325,8 @@ const Register: React.FC = () => {
                             ]}
                             getOptionLabel={(option) => option.label}
                             onChange={(_event, newValue) => {
-                                setEmployees({
-                                    ...employees,
+                                setEmployee({
+                                    ...employee,
                                     jobTitle: newValue ? newValue.value : ""
                                 });
                             }}
