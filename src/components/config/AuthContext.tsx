@@ -11,7 +11,7 @@ interface AuthContextType {
 
 interface Authentication {
     userId: string;
-    roles: [string];
+    roles: string[] | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             const response = await ME_API();
             if (response) {
-                setAuthentication({ userId: response.employee.uuid, roles: response.roles });
+                setAuthentication({ userId: response.uuid, roles: response.roles });
             } else {
                 setAuthentication(null);
             }
@@ -40,11 +40,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     useEffect(() => {
-        // Only check auth if not on a public route
-        if (!publicRoutes.includes(location.pathname)) {
+        // If we don't have auth info and we are not on a public route, try to get it from the session
+        if (!authentication && !publicRoutes.includes(location.pathname)) {
             checkAuth();
         }
-    }, [location.pathname, publicRoutes]);
+    }, [authentication, location.pathname, publicRoutes]);
 
     return (
         <AuthContext.Provider value={{ authentication, setAuthentication, checkAuth }}>

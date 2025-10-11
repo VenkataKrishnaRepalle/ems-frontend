@@ -1,5 +1,3 @@
-export const APPLICATION_URL = `http://localhost:8082/api/`;
-
 export interface Login {
     email: string;
     password: string;
@@ -23,11 +21,7 @@ export interface Employee {
     joiningDate: string;
     leavingDate: string;
     status: string;
-}
-
-export interface EmployeeMeResponse {
-    employee: Employee;
-    roles: [string];
+    roles: [string] | null;
 }
 
 export interface EmployeeRequest {

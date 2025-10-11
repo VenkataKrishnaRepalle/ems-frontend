@@ -1,9 +1,9 @@
 import api from "./Api";
-import {EmployeeMeResponse, EmployeeRequest, Manager} from "../components/types/types.d";
+import {Employee, EmployeeRequest, Manager} from "../components/types/types.d";
 
 export const ME_API = async () => {
     const response = await api.get("/employee/me");
-    return response.data as EmployeeMeResponse;
+    return response.data as Employee;
 };
 
 export const GET_ACTIVE_MANAGERS =async() => {

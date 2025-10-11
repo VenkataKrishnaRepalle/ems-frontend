@@ -1,22 +1,19 @@
 import { Container } from "@mui/material";
 import { Col, Form, Row } from "react-bootstrap";
 import { useCallback, useEffect, useState } from "react";
-import { AuthState } from "../config/AuthContext";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {Employee} from "../types/types.d";
 import {ME_API} from "../../api/Employee";
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { authentication } = AuthState();
     const [employee, setEmployee] = useState<Employee | null>(null);
 
     const getProfile = useCallback(async () => {
 
         try {
             const profile = await ME_API();
-            setEmployee(profile?.employee);
+            setEmployee(profile);
         } catch (error: any) {
             if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
                 navigate("/");

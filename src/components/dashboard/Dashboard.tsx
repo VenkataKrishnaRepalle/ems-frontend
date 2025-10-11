@@ -26,41 +26,41 @@ const Dashboard: React.FC = () => {
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>();
 
-    const findEmployeePeriodByYear = useCallback(async (employeeUuid: string, year: number) => {
+    const findEmployeePeriodByYear = useCallback(async (year: number) => {
         if (year === selectedYear) {
             return;
         }
         try {
             setSelectedYear(year);
-            const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(employeeUuid, year);
+            const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(authentication.userId, year);
             setEmployeePeriod(cyclesRes);
         } catch (error: any) {
             toast.error(`Error fetching employee period information for year: ${selectedYear}`);
         }
-    }, [selectedYear]);
+    }, [selectedYear, authentication.userId]);
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const employeeRes = await ME_API();
-            if (null !== employeeRes) {
-                console.log(employeeRes.employee);
-                setEmployee(employeeRes?.employee);
-                if (!employeeRes?.employee?.managerUuid) {
+            if (employeeRes) {
+                setEmployee(employeeRes);
+                if (!employeeRes.managerUuid) {
                     toast.info("You do not have a Line Manager.");
                 }
-                if (employeeRes?.employee.leavingDate && new Date(employeeRes?.employee.leavingDate) <= new Date()) {
+                if (employeeRes.leavingDate && new Date(employeeRes.leavingDate) <= new Date()) {
                     toast.warning("Employee is Leaving");
                 }
-            }
-            const yearsRes = await GET_ALL_ELIGIBLE_YEARS(employee.uuid);
-            if (yearsRes?.length) {
-                setYears(yearsRes);
-                const year = yearsRes[0];
-                setSelectedYear(year);
-                await findEmployeePeriodByYear(employee.uuid, year);
-            } else {
-                toast.warning("Colleague not assigned with cycle.");
+
+                const yearsRes = await GET_ALL_ELIGIBLE_YEARS(employeeRes.uuid);
+                if (yearsRes?.length) {
+                    setYears(yearsRes);
+                    const year = yearsRes[0];
+                    setSelectedYear(year);
+                    await findEmployeePeriodByYear(year);
+                } else {
+                    toast.warning("Colleague not assigned with cycle.");
+                }
             }
         } catch (error: any) {
             toast.error('Error fetching employee information');
@@ -71,7 +71,6 @@ const Dashboard: React.FC = () => {
 
     useEffect(() => {
         if (authentication && authentication.userId) {
-            console.log("redirected to dashboard");
             fetchData();
         }
     }, [authentication, fetchData]);
@@ -94,48 +93,50 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="dashboard">
-            <div className="profile-section bg-gradient p-5">
-                <Container>
-                    <h2 className="mb-4">My Profile</h2>
-                    <Row className="gy-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label className="fw-bold">Full Name</Form.Label>
-                                <Form.Control value={`${employee?.firstName} ${employee?.lastName}`} disabled/>
-                            </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label className="fw-bold">Email</Form.Label>
-                                <Form.Control value={employee?.email} disabled/>
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                    <Row className="gy-3 mt-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label className="fw-bold">Line Manager</Form.Label>
-                                <Form.Control
-                                    value={employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : ""}
-                                    disabled/>
-                            </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label className="fw-bold">Phone Number</Form.Label>
-                                <Form.Control value={employee?.phoneNumber} disabled/>
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                </Container>
-            </div>
+            {employee && (
+                <div className="profile-section bg-gradient p-5">
+                    <Container>
+                        <h2 className="mb-4">My Profile</h2>
+                        <Row className="gy-3">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-bold">Full Name</Form.Label>
+                                    <Form.Control value={`${employee.firstName} ${employee.lastName}`} disabled/>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-bold">Email</Form.Label>
+                                    <Form.Control value={employee.email || "N/A"} disabled/>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row className="gy-3 mt-3">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-bold">Line Manager</Form.Label>
+                                    <Form.Control
+                                        value={employee?.managerUuid ? `${employee.managerFirstName} ${employee.managerLastName}` : ""}
+                                        disabled/>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-bold">Phone Number</Form.Label>
+                                    <Form.Control value={employee.phoneNumber || "N/A"} disabled/>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </Container>
+                </div>
+            )}
 
             {years.length > 0 && (
                 <Container fluid className="bg-light min-vh-100 py-5">
                     <h3 className="text-center mb-4">Quarterly Reviews</h3>
                     <Box display="flex" justifyContent="center" alignItems="center" gap={2} flexWrap="wrap">
                         {years.map((year, index) => (
-                            <Button key={index} onClick={() => findEmployeePeriodByYear(employee.uuid, year)}
+                            <Button key={index} onClick={() => findEmployeePeriodByYear(year)}
                                     variant="contained">{year === new Date().getFullYear() ? year + " (Current Year)" : year}</Button>
                         ))}
                     </Box>
