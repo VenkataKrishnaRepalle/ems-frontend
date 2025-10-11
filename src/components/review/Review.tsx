@@ -3,11 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthState } from "../config/AuthContext";
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
-import { Form } from "react-bootstrap";
 import { toast } from "react-toastify";
-import {TimelineAndReview, Review} from "../types/types.d";
-import {GET_EMPLOYEE_PERIOD_BY_TYPE} from "../../api/Timeline";
-import {ADD_REVIEW_API} from "../../api/Review";
+import { TimelineAndReview, Review } from "../types/types.d";
+import { GET_EMPLOYEE_PERIOD_BY_TYPE } from "../../api/Timeline";
+import { ADD_REVIEW_API } from "../../api/Review";
 
 const AddReview = () => {
     const location = useLocation();
@@ -18,10 +17,6 @@ const AddReview = () => {
     const [timeline, setTimeline] = useState<TimelineAndReview | null>(null);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isCompleted, setIsCompleted] = useState(false);
-
-    useEffect(() => {
-
-    }, [authentication, navigate]);
 
     const fetchReview = useCallback(async () => {
         try {
@@ -47,6 +42,7 @@ const AddReview = () => {
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
         setReview((prevReview) => (prevReview ? { ...prevReview, [name]: value } : null));
+
         setErrors((prevErrors) => {
             const newErrors = { ...prevErrors };
             if (value.trim() === "") {
@@ -78,74 +74,90 @@ const AddReview = () => {
     };
 
     return (
-        <div className="bg-gradient p-3">
+        <Box className="bg-gradient" p={3}>
             <Container maxWidth="sm">
                 <Typography variant="h4" align="center" gutterBottom>
                     {state.reviewType} Review - {state.year}
                 </Typography>
-                <Form onSubmit={handleSubmit} noValidate>
-                    <Box sx={{ display: "grid", gap: 2 }}>
-                        <TextField
-                            label="What went well"
-                            name="whatWentWell"
-                            value={review?.whatWentWell || ""}
-                            type="text"
-                            fullWidth
-                            multiline
-                            minRows={3}
-                            maxRows={4}
-                            required
-                            disabled={isCompleted}
-                            onChange={handleInputChange}
-                        />
-                        <TextField
-                            label="What Done Better"
-                            name="whatDoneBetter"
-                            value={review?.whatDoneBetter || ""}
-                            type="text"
-                            fullWidth
-                            multiline
-                            minRows={1}
-                            maxRows={4}
-                            required
-                            disabled={isCompleted}
-                            onChange={handleInputChange}
-                        />
-                        <TextField
-                            label="Way Forward"
-                            name="wayForward"
-                            value={review?.wayForward || ""}
-                            type="text"
-                            fullWidth
-                            multiline
-                            minRows={1}
-                            maxRows={4}
-                            required
-                            disabled={isCompleted}
-                            onChange={handleInputChange}
-                        />
-                        <TextField
-                            label="Comments"
-                            name="overallComments"
-                            value={review?.overallComments || ""}
-                            type="text"
-                            fullWidth
-                            multiline
-                            minRows={1}
-                            maxRows={4}
-                            disabled={isCompleted}
-                            onChange={handleInputChange}
-                        />
-                        <Button variant="contained" color="primary" type="submit" fullWidth disabled={isCompleted}>
-                            Submit {state.reviewType} Review
-                        </Button>
-                        <Button variant="outlined" color="error" type="reset" fullWidth sx={{ mt: 1 }} disabled={isCompleted}>
-                            Reset
-                        </Button>
-                    </Box>
-                </Form>
+                <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: "grid", gap: 2 }}>
+                    <TextField
+                        label="What went well"
+                        name="whatWentWell"
+                        value={review?.whatWentWell || ""}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                        maxRows={4}
+                        required
+                        disabled={isCompleted}
+                        onChange={handleInputChange}
+                        error={!!errors.whatWentWell}
+                        helperText={errors.whatWentWell}
+                    />
+                    <TextField
+                        label="What Done Better"
+                        name="whatDoneBetter"
+                        value={review?.whatDoneBetter || ""}
+                        fullWidth
+                        multiline
+                        minRows={1}
+                        maxRows={4}
+                        required
+                        disabled={isCompleted}
+                        onChange={handleInputChange}
+                        error={!!errors.whatDoneBetter}
+                        helperText={errors.whatDoneBetter}
+                    />
+                    <TextField
+                        label="Way Forward"
+                        name="wayForward"
+                        value={review?.wayForward || ""}
+                        fullWidth
+                        multiline
+                        minRows={1}
+                        maxRows={4}
+                        required
+                        disabled={isCompleted}
+                        onChange={handleInputChange}
+                        error={!!errors.wayForward}
+                        helperText={errors.wayForward}
+                    />
+                    <TextField
+                        label="Comments"
+                        name="overallComments"
+                        value={review?.overallComments || ""}
+                        fullWidth
+                        multiline
+                        minRows={1}
+                        maxRows={4}
+                        disabled={isCompleted}
+                        onChange={handleInputChange}
+                        error={!!errors.overallComments}
+                        helperText={errors.overallComments}
+                    />
+                    <Button variant="contained" color="primary" type="submit" fullWidth disabled={isCompleted}>
+                        Submit {state.reviewType} Review
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        type="reset"
+                        fullWidth
+                        sx={{ mt: 1 }}
+                        disabled={isCompleted}
+                        onClick={() =>
+                            setReview(
+                                timeline?.review
+                                    ? { ...timeline.review, timelineUuid: timeline.uuid, type: timeline.type }
+                                    : null
+                            )
+                        }
+                    >
+                        Reset
+                    </Button>
+                </Box>
             </Container>
-        </div>
+        </Box>
     );
 };
 

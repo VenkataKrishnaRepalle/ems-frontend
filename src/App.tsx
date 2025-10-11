@@ -1,12 +1,11 @@
 import * as React from "react";
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import {Route, Routes, useNavigate} from "react-router-dom";
+import {Route, Routes} from "react-router-dom";
 import Login from "./components/auth/Login";
 import Dashboard from "./components/dashboard/Dashboard";
 import Register from "./components/register/Register";
 import Logout from "./components/auth/Logout";
-import {toast, ToastContainer} from "react-toastify";
+import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Review from "./components/review/Review";
 import Header from "./components/header/Header";

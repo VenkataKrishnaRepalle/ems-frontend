@@ -1,46 +1,40 @@
 import * as React from "react";
-import {ChangeEvent, FormEvent, useState} from "react";
-import {AuthState} from "../config/AuthContext";
-import {useNavigate} from "react-router-dom";
-import {Button, Col, Container, FloatingLabel, Form, Row} from "react-bootstrap";
-import {toast} from "react-toastify";
-import {Login} from "../types/types.d";
+import { ChangeEvent, FormEvent, useState } from "react";
+import { AuthState } from "../config/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Login } from "../types/types.d";
 import FullPageLoader from "../loader/FullPageLoader";
-import {LOGIN_API} from "../../api/Auth";
-import {getBrowserInfo} from "../utils/Utils";
-import {Typography, Link as MuiLink} from "@mui/material";
+import { LOGIN_API } from "../../api/Auth";
+import { Typography, Container, Box, TextField, Button, Link as MuiLink, Paper } from "@mui/material";
 
 const LoginPage: React.FC = () => {
-    const {setAuthentication} = AuthState();
+    const { setAuthentication } = AuthState();
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState<Login>({
         email: "",
         password: "",
-        requestQuery: null
+        requestQuery: null,
     });
 
     const [loading, setLoading] = useState<boolean>(false);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
-        setFormData((prevFormData) => ({...prevFormData, [name]: value}));
+        const { name, value } = event.target;
+        setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
     };
 
     const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const form = event.currentTarget;
-
-        if (!form.checkValidity()) {
-            event.stopPropagation();
-            toast.error("Please fill out the form correctly.");
+        if (!formData.email || !formData.password) {
+            toast.error("Please fill out all required fields.");
             return;
         }
 
         setLoading(true);
-
         try {
-            const {requestQuery, ...restFormData} = formData;
+            const { requestQuery, ...restFormData } = formData;
             const payload = requestQuery
                 ? {
                     ...restFormData,
@@ -59,12 +53,14 @@ const LoginPage: React.FC = () => {
                 toast.success("Login successful as " + response.email);
                 navigate("/dashboard");
             }
-        } catch (error) {
+        } catch (error: any) {
             if (error?.response?.data?.error?.code === "MAX_LOGIN_ATTEMPT_REACHED") {
-                toast.info(`Navigating to sessions page with state: { maxLoginAttempts: true, email: ${formData?.email} }`);
+                toast.info(`Navigating to sessions page for ${formData?.email}`);
                 setTimeout(() => {
-                    navigate("/sessions", {state: {maxLoginAttempts: true, email: formData?.email}});
+                    navigate("/sessions", { state: { maxLoginAttempts: true, email: formData?.email } });
                 }, 0);
+            } else {
+                toast.error("Invalid email or password");
             }
         } finally {
             setLoading(false);
@@ -73,57 +69,77 @@ const LoginPage: React.FC = () => {
 
     return (
         <>
-            <FullPageLoader loading={loading}/>
-            <Container className="d-flex justify-content-center align-items-center bg-light min-vh-100">
-                <Row className="w-100 justify-content-center">
-                    <Col xs={12} sm={8} md={6} lg={5}>
-                        <Form onSubmit={handleLogin} className="border p-4 text-center rounded" noValidate>
-                            <h1 className="mb-4">Login</h1>
-                            <FloatingLabel className="mb-3" controlId="email" label="Email">
-                                <Form.Control
-                                    type="text"
-                                    placeholder="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    autoFocus
-                                    required
-                                />
-                                <Form.Control.Feedback className="text-start" type="invalid">
-                                    Please enter a valid email
-                                </Form.Control.Feedback>
-                            </FloatingLabel>
-                            <FloatingLabel className="mb-3" controlId="Password" label="Password">
-                                <Form.Control
-                                    type="password"
-                                    placeholder="Enter Password"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleInputChange}
-                                    minLength={8}
-                                    maxLength={25}
-                                    required
-                                />
-                                <Form.Control.Feedback className="text-start" type="invalid">
-                                    Please enter a valid password
-                                </Form.Control.Feedback>
-                            </FloatingLabel>
-                            <Button className="mb-3 w-100" variant="primary" type="submit">Login</Button>
-                        </Form>
-                        <Typography variant="body2" align="center" sx={{mt: 2}}>
-                            Forgot your password?{" "}
-                            <MuiLink component="button" onClick={() => navigate("/forgot-password")}>
-                                Click here
-                            </MuiLink>
-                        </Typography>
-                        <Typography variant="body2" align="center" sx={{mt: 2}}>
-                            Reset Your Password?{" "}
-                            <MuiLink component="button" onClick={() => navigate("/reset-password")}>
-                                Click here
-                            </MuiLink>
-                        </Typography>
-                    </Col>
-                </Row>
+            <FullPageLoader loading={loading} />
+            <Container
+                maxWidth="sm"
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "100vh",
+                    backgroundColor: "#f5f5f5",
+                }}
+            >
+                <Paper
+                    elevation={3}
+                    sx={{
+                        padding: 4,
+                        borderRadius: 3,
+                        width: "100%",
+                        maxWidth: 420,
+                        textAlign: "center",
+                    }}
+                >
+                    <Typography variant="h4" gutterBottom>
+                        Login
+                    </Typography>
+
+                    <Box
+                        component="form"
+                        onSubmit={handleLogin}
+                        sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                        noValidate
+                    >
+                        <TextField
+                            label="Email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            fullWidth
+                            required
+                        />
+
+                        <TextField
+                            label="Password"
+                            name="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            fullWidth
+                            inputProps={{ minLength: 8, maxLength: 25 }}
+                            required
+                        />
+
+                        <Button type="submit" variant="contained" size="large" fullWidth>
+                            Login
+                        </Button>
+                    </Box>
+
+                    <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                        Forgot your password?{" "}
+                        <MuiLink component="button" onClick={() => navigate("/forgot-password")}>
+                            Click here
+                        </MuiLink>
+                    </Typography>
+
+                    <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                        Reset your password?{" "}
+                        <MuiLink component="button" onClick={() => navigate("/reset-password")}>
+                            Click here
+                        </MuiLink>
+                    </Typography>
+                </Paper>
             </Container>
         </>
     );

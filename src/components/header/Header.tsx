@@ -1,49 +1,123 @@
-import {Container, Nav, Navbar, NavDropdown} from "react-bootstrap";
 import * as React from "react";
-import {useEffect, useState} from "react";
-import {AuthState} from "../config/AuthContext";
-import {useNavigate} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { AuthState } from "../config/AuthContext";
+import { useNavigate } from "react-router-dom";
+import {
+    AppBar,
+    Toolbar,
+    IconButton,
+    Typography,
+    Button,
+    Menu,
+    MenuItem,
+    Box,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 
 interface HeaderProps {
-    role: React.AriaRole | undefined
+    role: React.AriaRole | undefined;
 }
 
-const Header: React.FC<HeaderProps> = ({role}: HeaderProps) => {
+const Header: React.FC<HeaderProps> = ({ role }: HeaderProps) => {
     const navigate = useNavigate();
-    const {authentication} = AuthState();
+    const { authentication } = AuthState();
     const [isManager, setIsManager] = useState<boolean>(false);
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
     useEffect(() => {
         setIsAdmin(authentication.roles.includes("ADMIN"));
         setIsManager(authentication.roles.includes("MANAGER"));
-    }, [authentication, navigate]);
+    }, [authentication]);
+
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleNavigation = (path: string) => {
+        navigate(path);
+        handleMenuClose();
+    };
 
     return (
-        <div className="dashboard">
-            <Navbar expand="lg" className="sticky-top bg-dark navbar-dark shadow">
-                <Container>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav"/>
-                    <Navbar.Collapse role={role} id="basic-navbar-nav">
-                        <Nav>
-                            <Nav.Link href="/dashboard">My View</Nav.Link>
-                            {isManager && <Nav.Link href="/team-view">My Team</Nav.Link>}
-                            {isAdmin && <Nav.Link href="/register">Add Employee</Nav.Link>}
-                            <Nav.Link href="/attendance">Attendance</Nav.Link>
-                            <Nav.Link href="/leaves">Leave</Nav.Link>
-                            <NavDropdown title="More" id="basic-nav-dropdown">
-                                <NavDropdown.Item href="/profile">Profile</NavDropdown.Item>
-                                <NavDropdown.Item href="/education">Education</NavDropdown.Item>
-                                <NavDropdown.Item href="/settings">Settings</NavDropdown.Item>
-                                <NavDropdown.Item href="/reset-password">Reset Password</NavDropdown.Item>
-                                <NavDropdown.Divider/>
-                                <NavDropdown.Item href="/logout" className="text-danger">Logout</NavDropdown.Item>
-                            </NavDropdown>
-                        </Nav>
-                    </Navbar.Collapse>
-                </Container>
-            </Navbar>
-        </div>
+        <AppBar position="sticky" color="primary">
+            <Toolbar>
+                {/* Mobile Menu Button */}
+                <IconButton
+                    edge="start"
+                    color="inherit"
+                    aria-label="menu"
+                    onClick={handleMenuOpen}
+                    sx={{ mr: 2, display: { xs: "flex", md: "none" } }}
+                >
+                    <MenuIcon />
+                </IconButton>
+
+                {/* App Title */}
+                <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{ flexGrow: 1, cursor: "pointer" }}
+                    onClick={() => navigate("/dashboard")}
+                >
+                    Dashboard
+                </Typography>
+
+                {/* Desktop Menu Buttons */}
+                <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2 }}>
+                    <Button color="inherit" onClick={() => navigate("/dashboard")}>
+                        My View
+                    </Button>
+                    {isManager && (
+                        <Button color="inherit" onClick={() => navigate("/team-view")}>
+                            My Team
+                        </Button>
+                    )}
+                    {isAdmin && (
+                        <Button color="inherit" onClick={() => navigate("/register")}>
+                            Add Employee
+                        </Button>
+                    )}
+                    <Button color="inherit" onClick={() => navigate("/attendance")}>
+                        Attendance
+                    </Button>
+                    <Button color="inherit" onClick={() => navigate("/leaves")}>
+                        Leave
+                    </Button>
+                    <Button color="inherit" onClick={handleMenuOpen}>
+                        More
+                    </Button>
+                </Box>
+
+                {/* Dropdown Menu */}
+                <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "right" }}
+                >
+                    <MenuItem onClick={() => handleNavigation("/profile")}>Profile</MenuItem>
+                    <MenuItem onClick={() => handleNavigation("/education")}>Education</MenuItem>
+                    <MenuItem onClick={() => handleNavigation("/settings")}>Settings</MenuItem>
+                    <MenuItem onClick={() => handleNavigation("/reset-password")}>
+                        Reset Password
+                    </MenuItem>
+                    <MenuItem divider />
+                    <MenuItem
+                        onClick={() => handleNavigation("/logout")}
+                        sx={{ color: "error.main" }}
+                    >
+                        Logout
+                    </MenuItem>
+                </Menu>
+            </Toolbar>
+        </AppBar>
     );
 };
 

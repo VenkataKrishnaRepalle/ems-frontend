@@ -1,20 +1,27 @@
-import {ChangeEvent, FormEvent, useRef, useState} from "react";
-import {ForgotPasswordRequest} from "../types/types.d";
+import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { ForgotPasswordRequest } from "../types/types.d";
 import FullPageLoader from "../loader/FullPageLoader";
-import {Button, Col, Container, FloatingLabel, Form, InputGroup, Row} from "react-bootstrap";
 import * as React from "react";
-import {FORGOT_PASSWORD_API, SEND_OTP_API, VERIFY_EMAIL_API} from "../../api/Auth";
-import {toast} from "react-toastify";
-import {Link as RouterLink, useNavigate} from "react-router-dom";
-import {isValidEmail} from "../common/CommonUtils";
-import {Link as MuiLink, Typography} from "@mui/material";
+import { FORGOT_PASSWORD_API, SEND_OTP_API, VERIFY_EMAIL_API } from "../../api/Auth";
+import { toast } from "react-toastify";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { isValidEmail } from "../common/CommonUtils";
+import {
+    Container,
+    Box,
+    TextField,
+    Button,
+    Typography,
+    Link as MuiLink,
+    Paper
+} from "@mui/material";
 
 const ForgotPassword: React.FC = () => {
     const [forgotPasswordData, setForgotPasswordData] = useState<ForgotPasswordRequest>({
-        "email": "",
-        "otp": "",
-        "password": "",
-        "confirmPassword": ""
+        email: "",
+        otp: "",
+        password: "",
+        confirmPassword: ""
     });
 
     const navigate = useNavigate();
@@ -26,16 +33,25 @@ const ForgotPassword: React.FC = () => {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
-        setForgotPasswordData((prevFormData) => ({...prevFormData, [name]: value}));
+        const { name, value } = event.target;
+        setForgotPasswordData((prevFormData) => ({ ...prevFormData, [name]: value }));
     };
 
     const handleForgotPassword = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const form = event.currentTarget;
 
-        if (!form.checkValidity()) {
-            event.stopPropagation();
+        if (
+            !forgotPasswordData.email ||
+            !forgotPasswordData.otp ||
+            !forgotPasswordData.password ||
+            !forgotPasswordData.confirmPassword
+        ) {
+            toast.error("Please fill out all required fields.");
+            return;
+        }
+
+        if (forgotPasswordData.password !== forgotPasswordData.confirmPassword) {
+            toast.error("Passwords do not match.");
             return;
         }
 
@@ -48,7 +64,7 @@ const ForgotPassword: React.FC = () => {
                 navigate("/");
             }
         } catch (error) {
-            toast.error("Failed to Update Password. Please try again.");
+            toast.error("Failed to update password. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -58,10 +74,11 @@ const ForgotPassword: React.FC = () => {
         try {
             const response = await VERIFY_EMAIL_API(forgotPasswordData.email);
             if (response?.success === true) {
-                toast.success("Email verified successfully. You can now Send Otp.");
+                toast.success("Email verified successfully. You can now send OTP.");
+                setVerifyEmail(true);
             }
-            setVerifyEmail(true);
         } catch (error) {
+            toast.error("Failed to verify email.");
         }
     };
 
@@ -91,110 +108,126 @@ const ForgotPassword: React.FC = () => {
 
     return (
         <>
-            <FullPageLoader loading={loading}/>
-            {!loading &&
-                <Container className="d-flex justify-content-center align-items-center bg-light min-vh-100">
-                    <Row className="w-100 justify-content-center">
-                        <Col xs={12} sm={8} md={6} lg={5}>
-                            <Form onSubmit={handleForgotPassword} className="border p-4 text-center rounded" noValidate>
-                                <h1 className="mb-4">Forgot Password</h1>
-                                <FloatingLabel className="mb-3" controlId="email" label="Email">
-                                    <Form.Control
-                                        type="email"
-                                        placeholder="email"
-                                        name="email"
-                                        value={forgotPasswordData.email}
-                                        onChange={handleInputChange}
-                                        disabled={verifyEmail}
-                                        autoFocus
-                                        required
-                                        isInvalid={!!forgotPasswordData.email && !isValidEmail(forgotPasswordData.email)}
-                                    />
-                                    {!verifyEmail &&
-                                        <InputGroup.Text className="p-0 mt-2">
-                                            <Button
-                                                variant="outline-secondary"
-                                                onClick={handleVerifyEmail}
-                                                disabled={!forgotPasswordData.email || !isValidEmail(forgotPasswordData.email)}
-                                                style={{width: "100%"}}
-                                            >
-                                                Verify Email
-                                            </Button>
-                                        </InputGroup.Text>
-                                    }
-                                    {verifyEmail && <Button
-                                        className="mt-2"
-                                        variant="outline-secondary"
-                                        onClick={handleSendOtp}
-                                        disabled={otpCooldown}
-                                        style={{width: "100%"}}
-                                    >
-                                        {otpCooldown ? `Resend OTP in ${timer} sec` : "Send OTP"}
-                                    </Button>
-                                    }
-                                    <Form.Control.Feedback className="text-start" type="invalid">
-                                        Please enter a valid email
-                                    </Form.Control.Feedback>
-                                </FloatingLabel>
-                                {sentOtp &&
-                                    <><FloatingLabel className="mb-3" controlId="OTP" label="OTP">
-                                        <Form.Control
-                                            type="text"
-                                            placeholder="Enter OTP"
-                                            name="otp"
-                                            value={forgotPasswordData.otp}
-                                            onChange={handleInputChange}
-                                            minLength={6}
-                                            maxLength={6}
-                                            required/>
-                                        <Form.Control.Feedback className="text-start" type="invalid">
-                                            Please enter a valid otp
-                                        </Form.Control.Feedback>
-                                    </FloatingLabel>
-                                        <FloatingLabel className="mb-3" controlId="Password"
-                                                       label="Password">
-                                            <Form.Control
-                                                type="password"
-                                                placeholder="Enter Password"
-                                                name="password"
-                                                value={forgotPasswordData.password}
-                                                onChange={handleInputChange}
-                                                minLength={8}
-                                                maxLength={25}
-                                                required/>
-                                            <Form.Control.Feedback className="text-start" type="invalid">
-                                                Please enter a valid password
-                                            </Form.Control.Feedback>
-                                        </FloatingLabel>
-                                        <FloatingLabel className="mb-3" controlId="Confirm Password"
-                                                       label="Confirm Password">
-                                            <Form.Control
-                                                type="password"
-                                                placeholder="Enter Confirm Password"
-                                                name="confirmPassword"
-                                                value={forgotPasswordData.confirmPassword}
-                                                onChange={handleInputChange}
-                                                minLength={8}
-                                                maxLength={25}
-                                                required/>
-                                            <Form.Control.Feedback className="text-start" type="invalid">
-                                                Please enter a valid Confirm password
-                                            </Form.Control.Feedback>
-                                        </FloatingLabel>
-                                        <Button className="mb-3 w-100" variant="primary" type="submit">
-                                            Update Password
-                                        </Button></>
+            <FullPageLoader loading={loading} />
+            {!loading && (
+                <Container
+                    maxWidth="sm"
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        minHeight: "100vh",
+                        backgroundColor: "#f5f5f5"
+                    }}
+                >
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            padding: 4,
+                            borderRadius: 3,
+                            width: "100%",
+                            maxWidth: 420,
+                            textAlign: "center"
+                        }}
+                    >
+                        <Typography variant="h4" gutterBottom>
+                            Forgot Password
+                        </Typography>
+
+                        <Box
+                            component="form"
+                            onSubmit={handleForgotPassword}
+                            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                            noValidate
+                        >
+                            <TextField
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={forgotPasswordData.email}
+                                onChange={handleInputChange}
+                                fullWidth
+                                required
+                                disabled={verifyEmail}
+                                error={!!forgotPasswordData.email && !isValidEmail(forgotPasswordData.email)}
+                                helperText={
+                                    !!forgotPasswordData.email && !isValidEmail(forgotPasswordData.email)
+                                        ? "Please enter a valid email"
+                                        : ""
                                 }
-                                <Typography variant="body2" align="center" sx={{mt: 2}}>
-                                    Back to Login Page? {' '}
-                                    <MuiLink component={RouterLink} to="/">
-                                        Click here
-                                    </MuiLink>
-                                </Typography>
-                            </Form>
-                        </Col>
-                    </Row>
-                </Container>}
+                            />
+
+                            {!verifyEmail ? (
+                                <Button
+                                    variant="outlined"
+                                    fullWidth
+                                    onClick={handleVerifyEmail}
+                                    disabled={!forgotPasswordData.email || !isValidEmail(forgotPasswordData.email)}
+                                >
+                                    Verify Email
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    fullWidth
+                                    onClick={handleSendOtp}
+                                    disabled={otpCooldown}
+                                >
+                                    {otpCooldown ? `Resend OTP in ${timer}s` : "Send OTP"}
+                                </Button>
+                            )}
+
+                            {sentOtp && (
+                                <>
+                                    <TextField
+                                        label="OTP"
+                                        name="otp"
+                                        type="text"
+                                        value={forgotPasswordData.otp}
+                                        onChange={handleInputChange}
+                                        inputProps={{ maxLength: 6 }}
+                                        required
+                                        fullWidth
+                                    />
+
+                                    <TextField
+                                        label="New Password"
+                                        name="password"
+                                        type="password"
+                                        value={forgotPasswordData.password}
+                                        onChange={handleInputChange}
+                                        inputProps={{ minLength: 8, maxLength: 25 }}
+                                        required
+                                        fullWidth
+                                    />
+
+                                    <TextField
+                                        label="Confirm Password"
+                                        name="confirmPassword"
+                                        type="password"
+                                        value={forgotPasswordData.confirmPassword}
+                                        onChange={handleInputChange}
+                                        inputProps={{ minLength: 8, maxLength: 25 }}
+                                        required
+                                        fullWidth
+                                    />
+
+                                    <Button type="submit" variant="contained" fullWidth>
+                                        Update Password
+                                    </Button>
+                                </>
+                            )}
+                        </Box>
+
+                        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                            Back to Login Page?{" "}
+                            <MuiLink component={RouterLink} to="/">
+                                Click here
+                            </MuiLink>
+                        </Typography>
+                    </Paper>
+                </Container>
+            )}
         </>
     );
 };
