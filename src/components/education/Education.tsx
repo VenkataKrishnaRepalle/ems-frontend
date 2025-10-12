@@ -1,9 +1,8 @@
 import * as React from "react";
 import {Education} from "../types/types.d";
 import {useCallback, useEffect, useState} from "react";
-import {AuthState} from "../config/AuthContext";
+import {useAppSelector} from "../../redux/hooks";
 import {toast} from "react-toastify";
-import {useNavigate} from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import UpdateIcon from '@mui/icons-material/Update';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -39,8 +38,7 @@ const DEGREE_LIST = [
 ];
 
 const EducationPage: React.FC = () => {
-    const {authentication} = AuthState();
-    const navigate = useNavigate();
+    const employee = useAppSelector((state) => state.employee.employee);
     const [educations, setEducations] = useState<Education[]>([]);
     const [editMode, setEditMode] = useState<string | null>(null);
     const [editedEducation, setEditedEducation] = useState<Partial<Education>>({});
@@ -53,7 +51,7 @@ const EducationPage: React.FC = () => {
 
     const getEducations = useCallback(async () => {
         try {
-            const response = await GET_ALL_EDUCATIONS(authentication.userId);
+            const response = await GET_ALL_EDUCATIONS(employee?.uuid);
             if (null !== response) {
                 setEducations(response);
                 const degrees = response.map((education: Education) => education.degree);
@@ -62,7 +60,7 @@ const EducationPage: React.FC = () => {
         } catch (error) {
             toast.error("Something went wrong, Failed to save education details");
         }
-    }, [authentication.userId]);
+    }, [employee?.uuid]);
 
     useEffect(() => {
         getEducations();
@@ -115,7 +113,7 @@ const EducationPage: React.FC = () => {
 
         const newEdu: Education = {
             uuid: generatedUuid,
-            employeeUuid: authentication.userId,
+            employeeUuid: employee?.uuid || "",
             schoolName: "",
             degree: "",
             grade: "",

@@ -9,7 +9,7 @@ import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Review from "./components/review/Review";
 import Header from "./components/header/Header";
-import {AuthState} from "./components/config/AuthContext";
+import {useAppSelector} from "./redux/hooks";
 import Profile from "./components/profile/profile";
 import Education from "./components/education/Education";
 import Attendance from "./components/attendance/Attendance";
@@ -18,12 +18,12 @@ import ResetPassword from "./components/auth/ResetPassword";
 import LoginLimitExceedPage from "./components/auth/LoginLimitExceedPage";
 
 const App: React.FC = () => {
-    const {authentication} = AuthState();
+    const employee = useAppSelector((state) => state.employee.employee);
 
     return (
         <div className="App">
             <ToastContainer/>
-            {authentication && authentication.userId && <Header role="search"/>}
+            {employee && employee.uuid && <Header role="search"/>}
             <Routes>
                 <Route path="/" element={<Login/>}/>
                 <Route path="/profile" element={<Profile/>}/>

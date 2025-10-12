@@ -3,16 +3,16 @@ import {Attendance} from "../types/types.d";
 import {toast} from "react-toastify";
 import useValidateToken from "../auth/ValidateToken";
 import {GET_ALL_ATTENDANCE_API} from "../../api/Attendance";
-import {AuthState} from "../config/AuthContext";
+import {useAppSelector} from "../../redux/hooks";
 const AttendancePage: React.FC = () => {
     const [attendances, setAttendances] = useState<Attendance[]>();
-    const { authentication } = AuthState();
+    const employee = useAppSelector((state) => state.employee.employee);
 
     useValidateToken();
 
     const getAllAttendances = useCallback(async () => {
         try {
-            const attendances = await GET_ALL_ATTENDANCE_API(authentication?.userId);
+            const attendances = await GET_ALL_ATTENDANCE_API(employee?.uuid);
             setAttendances(attendances.data);
         } catch (error) {
             toast.error(error.response?.data?.errorCode)

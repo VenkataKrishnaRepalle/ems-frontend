@@ -8,7 +8,7 @@ import {
     Autocomplete, InputAdornment, IconButton,
 } from "@mui/material";
 import {useNavigate} from "react-router-dom";
-import {AuthState} from "../config/AuthContext";
+import {useAppSelector} from "../../redux/hooks";
 import {Visibility, VisibilityOff} from "@mui/icons-material";
 import {toast} from "react-toastify";
 import {Department, EmployeeRequest, Manager} from "../types/types.d";
@@ -17,7 +17,7 @@ import {ADD_EMPLOYEE, GET_ACTIVE_MANAGERS} from "../../api/Employee";
 
 
 const Register: React.FC = () => {
-    const {authentication} = AuthState();
+    const currentUser = useAppSelector((state) => state.employee.employee);
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
@@ -47,10 +47,10 @@ const Register: React.FC = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (authentication.roles.includes("ADMIN")) {
+        if (currentUser?.roles?.includes("ADMIN")) {
             setIsAdmin(true);
         }
-    }, [authentication]);
+    }, [currentUser]);
 
     const fetchDepartments = async () => {
         if (departments.length > 0) return;

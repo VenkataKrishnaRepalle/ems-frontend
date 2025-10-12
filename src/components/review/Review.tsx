@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AuthState } from "../config/AuthContext";
+import { useAppSelector } from "../../redux/hooks";
 import { Box, Button, Container, TextField, Typography } from "@mui/material";
 import { toast } from "react-toastify";
 import { TimelineAndReview, Review } from "../types/types.d";
@@ -12,7 +12,7 @@ const AddReview = () => {
     const location = useLocation();
     const state = location.state as { employeePeriodUuid?: string; reviewType?: string; year?: string } || {};
     const navigate = useNavigate();
-    const { authentication } = AuthState();
+    const employee = useAppSelector((state) => state.employee.employee);
     const [review, setReview] = useState<Review | null>(null);
     const [timeline, setTimeline] = useState<TimelineAndReview | null>(null);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -56,10 +56,10 @@ const AddReview = () => {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!review || !authentication?.userId) return;
+        if (!review || !employee?.uuid) return;
 
         try {
-            const submitReview = await ADD_REVIEW_API(authentication.userId, review);
+            const submitReview = await ADD_REVIEW_API(employee.uuid, review);
 
             if (submitReview.status === 201) {
                 toast.success("Review submitted successfully");

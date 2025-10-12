@@ -1,19 +1,20 @@
 import { useEffect } from "react";
-import { AuthState } from "../config/AuthContext";
+import { useAppDispatch } from "../../redux/hooks";
+import { clearEmployee } from "../../redux/employeeSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const Logout = () => {
-    const { setAuthentication } = AuthState();
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
 
     useEffect(() => {
-        setAuthentication(null);
+        dispatch(clearEmployee());
         localStorage.removeItem("authentication");
         toast.dismiss();
         toast.success("You have been logged out successfully.");
         navigate("/");
-    }, [setAuthentication, navigate]);
+    }, [dispatch, navigate]);
 
     return null;
 };

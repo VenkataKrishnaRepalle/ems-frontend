@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ChangeEvent, FormEvent, useState } from "react";
-import { AuthState } from "../config/AuthContext";
+import { useAppDispatch } from "../../redux/hooks";
+import { setEmployee } from "../../redux/employeeSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Login } from "../types/types.d";
@@ -9,7 +10,7 @@ import { LOGIN_API } from "../../api/Auth";
 import { Typography, Container, Box, TextField, Button, Link as MuiLink, Paper } from "@mui/material";
 
 const LoginPage: React.FC = () => {
-    const { setAuthentication } = AuthState();
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState<Login>({
@@ -46,10 +47,7 @@ const LoginPage: React.FC = () => {
 
             const response = await LOGIN_API(payload);
             if (response !== null) {
-                setAuthentication({
-                    userId: response.employeeId,
-                    roles: response.roles,
-                });
+                dispatch(setEmployee(response));
                 toast.success("Login successful as " + response.email);
                 navigate("/dashboard");
             }
