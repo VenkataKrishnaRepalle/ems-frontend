@@ -10,7 +10,6 @@ const Logout = () => {
 
     useEffect(() => {
         dispatch(clearEmployee());
-        localStorage.removeItem("authentication");
         toast.dismiss();
         toast.success("You have been logged out successfully.");
         navigate("/");

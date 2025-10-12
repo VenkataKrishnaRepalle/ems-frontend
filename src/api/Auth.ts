@@ -30,3 +30,8 @@ export const REFRESH_TOKEN_API = async () => {
     const response = await api.post("/auth/refresh-token");
     return response.data;
 }
+
+export const VALIDATE_TOKEN_API = async () => {
+    const response = await api.post("/auth/validate-token");
+    return response.data;
+}

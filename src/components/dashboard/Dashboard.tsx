@@ -73,15 +73,12 @@ const Dashboard: React.FC = () => {
         }
     }, [findEmployeePeriodByYear]);
 
-    // Fetch employee data on mount if not in Redux
     useEffect(() => {
         if (!employee) {
             fetchEmployeeData();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Fetch years data when employee is available
     useEffect(() => {
         if (employee?.uuid && years.length === 0) {
             setLoading(true);
@@ -89,7 +86,6 @@ const Dashboard: React.FC = () => {
         } else if (employee) {
             setLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [employee?.uuid]);
 
     const formatDate = (dateString?: string): string => {

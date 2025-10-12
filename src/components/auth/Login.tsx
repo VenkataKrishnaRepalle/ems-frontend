@@ -1,18 +1,19 @@
 import * as React from "react";
-import { ChangeEvent, FormEvent, useState } from "react";
-import { useAppDispatch } from "../../redux/hooks";
-import { setEmployee } from "../../redux/employeeSlice";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { Login } from "../types/types.d";
+import {ChangeEvent, FormEvent, useEffect, useState} from "react";
+import {useAppDispatch, useAppSelector} from "../../redux/hooks";
+import {setEmployee} from "../../redux/employeeSlice";
+import {useNavigate} from "react-router-dom";
+import {toast} from "react-toastify";
+import {Login} from "../types/types.d";
 import FullPageLoader from "../loader/FullPageLoader";
-import { LOGIN_API } from "../../api/Auth";
-import { Typography, Container, Box, TextField, Button, Link as MuiLink, Paper } from "@mui/material";
+import {LOGIN_API} from "../../api/Auth";
+import {Typography, Container, Box, TextField, Button, Link as MuiLink, Paper} from "@mui/material";
+import {ME_API} from "../../api/Employee";
 
 const LoginPage: React.FC = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-
+    const employee = useAppSelector((state) => state.employee.employee);
     const [formData, setFormData] = useState<Login>({
         email: "",
         password: "",
@@ -22,8 +23,8 @@ const LoginPage: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
+        const {name, value} = event.target;
+        setFormData((prevFormData) => ({...prevFormData, [name]: value}));
     };
 
     const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -35,7 +36,7 @@ const LoginPage: React.FC = () => {
 
         setLoading(true);
         try {
-            const { requestQuery, ...restFormData } = formData;
+            const {requestQuery, ...restFormData} = formData;
             const payload = requestQuery
                 ? {
                     ...restFormData,
@@ -55,19 +56,32 @@ const LoginPage: React.FC = () => {
             if (error?.response?.data?.error?.code === "MAX_LOGIN_ATTEMPT_REACHED") {
                 toast.info(`Navigating to sessions page for ${formData?.email}`);
                 setTimeout(() => {
-                    navigate("/sessions", { state: { maxLoginAttempts: true, email: formData?.email } });
+                    navigate("/sessions", {state: {maxLoginAttempts: true, email: formData?.email}});
                 }, 0);
-            } else {
-                toast.error("Invalid email or password");
             }
         } finally {
             setLoading(false);
         }
     };
 
+    useEffect(() => {
+        const redirect = async () => {
+            try {
+                const response = await ME_API();
+                if(response){
+                    navigate("/dashboard");
+                }
+            } catch (error) {
+                // User is not logged in, stay on login page
+                console.log("Not authenticated");
+            }
+        };
+        redirect();
+    }, [employee, navigate]);
+
     return (
         <>
-            <FullPageLoader loading={loading} />
+            <FullPageLoader loading={loading}/>
             <Container
                 maxWidth="sm"
                 sx={{
@@ -95,7 +109,7 @@ const LoginPage: React.FC = () => {
                     <Box
                         component="form"
                         onSubmit={handleLogin}
-                        sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                        sx={{display: "flex", flexDirection: "column", gap: 2}}
                         noValidate
                     >
                         <TextField
@@ -115,7 +129,7 @@ const LoginPage: React.FC = () => {
                             value={formData.password}
                             onChange={handleInputChange}
                             fullWidth
-                            inputProps={{ minLength: 8, maxLength: 25 }}
+                            inputProps={{minLength: 8, maxLength: 25}}
                             required
                         />
 
@@ -124,14 +138,14 @@ const LoginPage: React.FC = () => {
                         </Button>
                     </Box>
 
-                    <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                    <Typography variant="body2" align="center" sx={{mt: 2}}>
                         Forgot your password?{" "}
                         <MuiLink component="button" onClick={() => navigate("/forgot-password")}>
                             Click here
                         </MuiLink>
                     </Typography>
 
-                    <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                    <Typography variant="body2" align="center" sx={{mt: 2}}>
                         Reset your password?{" "}
                         <MuiLink component="button" onClick={() => navigate("/reset-password")}>
                             Click here
