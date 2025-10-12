@@ -1,16 +1,18 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { AuthState } from "../config/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { Box, Button, Card, Container, Grid, TextField, Typography } from "@mui/material";
+import React, {useEffect, useState, useCallback} from "react";
+import {useNavigate} from "react-router-dom";
+import {toast} from "react-toastify";
+import {Box, Button, Card, Container, Grid, TextField, Typography} from "@mui/material";
 import FullPageLoader from "../loader/FullPageLoader";
-import { Employee, EmployeePeriodAndTimeline } from "../types/types.d";
-import { ME_API } from "../../api/Employee";
-import { GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR } from "../../api/EmployeePeriod";
+import {EmployeePeriodAndTimeline} from "../types/types.d";
+import {ME_API} from "../../api/Employee";
+import {GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR} from "../../api/EmployeePeriod";
+import {useAppDispatch, useAppSelector} from "../../redux/hooks";
+import {setEmployee} from "../../redux/employeeSlice";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { authentication } = AuthState();
+    const dispatch = useAppDispatch();
+    const employee = useAppSelector((state) => state.employee.employee);
     const [loading, setLoading] = useState<boolean>(true);
     const [years, setYears] = useState<number[]>([]);
     const [employeePeriod, setEmployeePeriod] = useState<EmployeePeriodAndTimeline>({
@@ -22,56 +24,73 @@ const Dashboard: React.FC = () => {
         Q3: undefined,
         Q4: undefined,
     });
-    const [employee, setEmployee] = useState<Employee | null>(null);
     const [selectedYear, setSelectedYear] = useState<number>();
 
     const findEmployeePeriodByYear = useCallback(
         async (year: number) => {
-            if (year === selectedYear) return;
+            if (year === selectedYear || !employee?.uuid) return;
 
             try {
                 setSelectedYear(year);
-                const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(authentication.userId, year);
+                const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(employee.uuid, year);
                 setEmployeePeriod(cyclesRes);
             } catch (error: any) {
                 toast.error(`Error fetching employee period information for year: ${selectedYear}`);
             }
         },
-        [selectedYear, authentication.userId]
+        [selectedYear, employee?.uuid]
     );
 
-    const fetchData = useCallback(async () => {
+    const fetchEmployeeData = useCallback(async () => {
         try {
-            setLoading(true);
             const employeeRes = await ME_API();
             if (employeeRes) {
-                setEmployee(employeeRes);
+                dispatch(setEmployee(employeeRes));
 
                 if (!employeeRes.managerUuid) toast.info("You do not have a Line Manager.");
                 if (employeeRes.leavingDate && new Date(employeeRes.leavingDate) <= new Date()) {
                     toast.warning("Employee is Leaving");
                 }
-
-                const yearsRes = await GET_ALL_ELIGIBLE_YEARS(employeeRes.uuid);
-                if (yearsRes?.length) {
-                    setYears(yearsRes);
-                    const year = yearsRes[0];
-                    setSelectedYear(year);
-                    await findEmployeePeriodByYear(year);
-                } else {
-                    toast.warning("Colleague not assigned with cycle.");
-                }
             }
         } catch (error: any) {
             toast.error("Error fetching employee information");
-        } finally {
-            setLoading(false);
+        }
+    }, [dispatch]);
+
+    const fetchYearsData = useCallback(async (employeeUuid: string) => {
+        try {
+            const yearsRes = await GET_ALL_ELIGIBLE_YEARS(employeeUuid);
+            if (yearsRes?.length) {
+                setYears(yearsRes);
+                const year = yearsRes[0];
+                setSelectedYear(year);
+                await findEmployeePeriodByYear(year);
+            } else {
+                toast.warning("Colleague not assigned with cycle.");
+            }
+        } catch (error: any) {
+            toast.error("Error fetching years information");
         }
     }, [findEmployeePeriodByYear]);
 
+    // Fetch employee data on mount if not in Redux
     useEffect(() => {
-        if (authentication && authentication.userId) fetchData();
-    }, [authentication, fetchData]);
+        if (!employee) {
+            fetchEmployeeData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Fetch years data when employee is available
+    useEffect(() => {
+        if (employee?.uuid && years.length === 0) {
+            setLoading(true);
+            fetchYearsData(employee.uuid).finally(() => setLoading(false));
+        } else if (employee) {
+            setLoading(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [employee?.uuid]);
 
     const formatDate = (dateString?: string): string => {
         return dateString ? new Date(dateString).toDateString() : "N/A";
@@ -80,19 +99,19 @@ const Dashboard: React.FC = () => {
     const viewReview = (employeePeriodUuid?: string, reviewType?: string, year?: number) => {
         if (employeePeriodUuid && reviewType) {
             navigate(`/review/${reviewType}/reviewUuid/${employeePeriodUuid}`, {
-                state: { employeePeriodUuid, reviewType, year },
+                state: {employeePeriodUuid, reviewType, year},
             });
         } else {
             toast.error("Review details are missing.");
         }
     };
 
-    if (loading) return <FullPageLoader loading={loading} />;
+    if (loading) return <FullPageLoader loading={loading}/>;
 
     return (
         <div className="dashboard">
             {employee && (
-                <Box sx={{ background: "linear-gradient(to right, #f3f4f6, #e5e7eb)", p: 5 }}>
+                <Box sx={{background: "linear-gradient(to right, #f3f4f6, #e5e7eb)", p: 5}}>
                     <Container>
                         <Typography variant="h4" gutterBottom>
                             My Profile
@@ -180,7 +199,7 @@ const Dashboard: React.FC = () => {
                                                     {buttonLabel}
                                                 </Button>
                                             ) : (
-                                                <Box sx={{ height: "36px" }} />
+                                                <Box sx={{height: "36px"}}/>
                                             )}
                                         </Card>
                                     </Grid>

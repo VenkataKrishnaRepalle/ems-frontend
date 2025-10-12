@@ -1,27 +1,10 @@
 import { Box, Container, Grid, TextField, Typography } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Employee } from "../types/types.d";
-import { ME_API } from "../../api/Employee";
+
+import { useAppSelector } from "../../redux/hooks";
 
 const Profile = () => {
-    const navigate = useNavigate();
-    const [employee, setEmployee] = useState<Employee | null>(null);
-
-    const getProfile = useCallback(async () => {
-        try {
-            const profile = await ME_API();
-            setEmployee(profile);
-        } catch (error: any) {
-            if (error.response?.data?.errorCode === "TOKEN_EXPIRED") {
-                navigate("/");
-            }
-        }
-    }, [navigate]);
-
-    useEffect(() => {
-        getProfile();
-    }, [getProfile]);
+    // Get employee data from Redux (no API call needed!)
+    const employee = useAppSelector((state) => state.employee.employee);
 
     return (
         <Box className="bg-gradient" p={4}>
