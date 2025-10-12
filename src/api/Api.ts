@@ -2,6 +2,7 @@
 import axios, {AxiosError, AxiosInstance} from "axios";
 import {toast} from "react-toastify";
 import {ErrorResponse} from "../components/types/types.d";
+import {REFRESH_TOKEN_API} from "./Auth";
 
 const API_BASE_URL = "http://localhost:8082/api";
 
@@ -24,15 +25,22 @@ api.interceptors.response.use(
     (response) => {
         return response;
     },
-    (error: AxiosError) => {
+    async (error: AxiosError) => {
         if (error.response) {
             const status = error.response.status;
             const errorData = error?.response?.data as ErrorResponse;
             if (status === 404 || status === 400) {
                 toast.error(errorData.error.message);
-            } else if (status === 401 || status === 403) {
+            } else if (status === 401) {
                 toast.error("Session expired. Please login again.");
-                // window.location.href = "/";
+                const response = await REFRESH_TOKEN_API();
+                if (response.status === 200) {
+                    toast.success("Session refreshed successfully.");
+                } else {
+                    toast.error("Failed to refresh session. Please login again.");
+                }
+            } else if (status === 403) {
+                toast.error("Don't have privileged access to view");
             } else if (status >= 500) {
                 toast.error("Server error. Please try again later.");
             } else {
