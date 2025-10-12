@@ -6,6 +6,11 @@ export const LOGIN_API = async (login: any) => {
     return response.data;
 }
 
+export const VALIDATE_TOKEN_API = async (userId: string) => {
+    const response = await api.post(`auth/validate-token?employeeId=${userId}`);
+    return response.data;
+}
+
 export const VERIFY_EMAIL_API = async (email: string) => {
     const response = await api.post(`/auth/verify-email?email=${email}`);
     return response.data;
@@ -23,10 +28,5 @@ export const FORGOT_PASSWORD_API = async (forgotPassword: ForgotPasswordRequest)
 
 export const RESET_PASSWORD_API = async (resetPassword: ResetPasswordRequest) => {
     const response = await api.post("/password/resetPassword", resetPassword);
-    return response.data;
-}
-
-export const REFRESH_TOKEN_API = async () => {
-    const response = await api.post("/auth/refresh-token");
     return response.data;
 }
