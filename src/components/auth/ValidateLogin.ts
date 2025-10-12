@@ -17,7 +17,7 @@ export const ValidateLogin = () => {
                 console.log(refreshToken);
                 if (refreshToken?.tokenActive === false && refreshToken.refreshTokenActive === false) {
                     dispatch(clearEmployee());
-                    navigate("/");
+                    navigate("/logout");
                     toast.error("Session expired. Please login again.");
                 } else if (refreshToken?.tokenActive === true) {
                     const me = await ME_API();
@@ -25,11 +25,11 @@ export const ValidateLogin = () => {
                 } else if (refreshToken?.refreshTokenActive === true) {
                     const refreshToken = await REFRESH_TOKEN_API();
                     dispatch(setEmployee(refreshToken));
+                } else {
+                    navigate("/logout");
                 }
             } catch (error) {
-                navigate("/");
-                dispatch(clearEmployee());
-                toast.error("Session expired. Please login again.");
+                navigate("/logout");
             }
         };
 

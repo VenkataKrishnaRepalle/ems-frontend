@@ -35,3 +35,8 @@ export const VALIDATE_TOKEN_API = async () => {
     const response = await api.post("/auth/validate-token");
     return response.data;
 }
+
+export const LOGOUT_API = async () => {
+    const response = await api.post("/auth/logout");
+    return response.data;
+}
