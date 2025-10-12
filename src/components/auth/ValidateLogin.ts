@@ -14,7 +14,6 @@ export const ValidateLogin = () => {
         const validateAndRefresh = async () => {
             try {
                 const refreshToken = await VALIDATE_TOKEN_API();
-                console.log(refreshToken);
                 if (refreshToken?.tokenActive === false && refreshToken.refreshTokenActive === false) {
                     dispatch(clearEmployee());
                     navigate("/logout");
