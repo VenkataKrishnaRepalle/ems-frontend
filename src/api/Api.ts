@@ -32,13 +32,7 @@ api.interceptors.response.use(
             if (status === 404 || status === 400) {
                 toast.error(errorData.error.message);
             } else if (status === 401) {
-                toast.error("Session expired. Please login again.");
-                // const response = await REFRESH_TOKEN_API();
-                // if (response.status === 200) {
-                //     toast.success("Session refreshed successfully.");
-                // } else {
-                //     toast.error("Failed to refresh session. Please login again.");
-                // }
+                // toast.error("Session expired. Please login again.");
             } else if (status === 403) {
                 toast.error("Don't have privileged access to view");
             } else if (status >= 500) {

@@ -72,7 +72,6 @@ const LoginPage: React.FC = () => {
                     navigate("/dashboard");
                 }
             } catch (error) {
-                // User is not logged in, stay on login page
                 console.log("Not authenticated");
             }
         };
