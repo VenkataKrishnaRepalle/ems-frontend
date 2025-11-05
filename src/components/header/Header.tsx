@@ -104,6 +104,14 @@ const Header: React.FC<HeaderProps> = ({role}: HeaderProps) => {
                 )}
                 {isAdmin && (
                     <ListItem disablePadding>
+                        <ListItemButton onClick={() => handleNavigation("/all-employees")}>
+                            <PersonAddIcon sx={{mr: 2}}/>
+                            <ListItemText primary="All Employees"/>
+                        </ListItemButton>
+                    </ListItem>
+                )}
+                {isAdmin && (
+                    <ListItem disablePadding>
                         <ListItemButton onClick={() => handleNavigation("/register")}>
                             <PersonAddIcon sx={{mr: 2}}/>
                             <ListItemText primary="Add Employee"/>
