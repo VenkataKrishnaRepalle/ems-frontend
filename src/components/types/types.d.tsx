@@ -18,6 +18,7 @@ export interface Employee {
     managerFirstName: string;
     managerLastName: string;
     managerAccountStatus: string;
+    isManager: boolean;
     joiningDate: string;
     leavingDate: string;
     status: string;
@@ -46,6 +47,11 @@ export interface Manager {
     firstName: string;
     lastName: string;
     email: string;
+}
+
+export interface FullTeam {
+    myManagerReportees: Employee[];
+    myReportees: Employee[];
 }
 
 export interface Department {
@@ -167,4 +173,28 @@ export interface EmployeeSession {
     location: string;
     isActive: boolean;
     loginTime: string;
+}
+
+export interface EmployeePaginationResponse {
+    data: EmployeeResponse[];
+    currentPage: number;
+    totalItems: number;
+    totalPages: number;
+}
+
+export interface EmployeeResponse {
+    uuid: string;
+    firstName: string;
+    lastName: string;
+    gender: string;
+    dateOfBirth: string;
+    phoneNumber: string;
+    username: string;
+    email: string;
+    managerUuid: string;
+    isManager: boolean;
+    joiningDate: string;
+    leavingDate: string;
+    createdTime: string;
+    updatedTime: string;
 }

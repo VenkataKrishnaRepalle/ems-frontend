@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from "react";
+import React, {useEffect, useState, useCallback, useRef} from "react";
 import {useNavigate} from "react-router-dom";
 import {toast} from "react-toastify";
 import {Box, Button, Card, Container, Grid, TextField, Typography} from "@mui/material";
@@ -18,6 +18,7 @@ const Dashboard: React.FC = () => {
     const employee = useAppSelector((state) => state.employee.employee);
     const [loading, setLoading] = useState<boolean>(true);
     const [years, setYears] = useState<number[]>([]);
+    const periodCache = useRef<Map<number, EmployeePeriodAndTimeline>>(new Map());
     const [employeePeriod, setEmployeePeriod] = useState<EmployeePeriodAndTimeline>({
         employeeId: "",
         employeeCycleId: "",
@@ -33,12 +34,20 @@ const Dashboard: React.FC = () => {
         async (year: number) => {
             if (year === selectedYear || !employee?.uuid) return;
 
+            // Check if data is in cache
+            if (periodCache.current.has(year)) {
+                setEmployeePeriod(periodCache.current.get(year)!);
+                setSelectedYear(year);
+                return;
+            }
+
             try {
                 setSelectedYear(year);
                 const cyclesRes = await GET_EMPLOYEE_PERIOD_BY_YEAR(employee.uuid, year);
+                periodCache.current.set(year, cyclesRes);
                 setEmployeePeriod(cyclesRes);
             } catch (error: any) {
-                toast.error(`Error fetching employee period information for year: ${selectedYear}`);
+                toast.error(`Error fetching employee period information for year: ${year}`);
             }
         },
         [selectedYear, employee?.uuid]

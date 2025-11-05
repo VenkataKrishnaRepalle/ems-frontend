@@ -15,11 +15,9 @@ import {
     Link as MuiLink,
     Paper,
 } from "@mui/material";
-import {useDispatch} from "react-redux";
 
 const ResetPassword: React.FC = () => {
     const navigate = useNavigate();
-    const dispatch = useDispatch();
     const [loading, setLoading] = React.useState<boolean>(false);
     const [resetPasswordData, setResetPasswordData] = useState<ResetPasswordRequest>({
         email: "",
@@ -165,7 +163,6 @@ const ResetPassword: React.FC = () => {
                                 </>
                             )}
 
-                            {/* Back to Login */}
                             <Grid container justifyContent="center" sx={{ mt: 3 }}>
                                 <Grid item>
                                     <Typography variant="body2">

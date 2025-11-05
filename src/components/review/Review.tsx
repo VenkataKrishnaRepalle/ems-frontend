@@ -21,9 +21,9 @@ const AddReview = () => {
     const fetchReview = useCallback(async () => {
         try {
             const response = await GET_EMPLOYEE_PERIOD_BY_TYPE(state.employeePeriodUuid, state.reviewType);
-            setTimeline(response.data);
-            setReview({ ...response.data.review, timelineUuid: response.data.uuid, type: response.data.type });
-            if (response.data.status === "COMPLETED") {
+            setTimeline(response);
+            setReview({ ...response.review, timelineUuid: response.uuid, type: response.type });
+            if (response.status === "COMPLETED") {
                 setIsCompleted(true);
             }
         } catch (error: any) {
