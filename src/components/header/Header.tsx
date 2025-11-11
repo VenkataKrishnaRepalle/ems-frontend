@@ -37,7 +37,7 @@ interface HeaderProps {
     role: React.AriaRole | undefined;
 }
 
-const Header: React.FC<HeaderProps> = ({role}: HeaderProps) => {
+const Header: React.FC<HeaderProps> = () => {
     const navigate = useNavigate();
     const employee = useAppSelector((state) => state.employee.employee);
     const [isManager, setIsManager] = useState<boolean>(false);

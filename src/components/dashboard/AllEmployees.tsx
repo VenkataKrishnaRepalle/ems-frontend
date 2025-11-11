@@ -29,8 +29,9 @@ import {
     Cake as CakeIcon,
     Event as EventIcon,
 } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
-import { visuallyHidden } from '@mui/utils';
+import {format, parseISO} from 'date-fns';
+import {visuallyHidden} from '@mui/utils';
+import {useAppSelector} from "../../redux/hooks";
 
 const formatDateTime = (dateString: string) => {
     if (!dateString) return '-';
@@ -79,6 +80,7 @@ const DEFAULT_SORT_FIELD: keyof EmployeeResponse = 'uuid';
 
 const AllEmployees: React.FC = () => {
     ValidateLogin();
+    const employee = useAppSelector((state) => state.employee.employee);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
@@ -88,7 +90,7 @@ const AllEmployees: React.FC = () => {
     const [sortBy, setSortBy] = useState<keyof EmployeeResponse>(DEFAULT_SORT_FIELD);
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [loading, setLoading] = useState<boolean>(true);
-
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const toggleRow = (uuid: string) => {
         setExpandedRows(prev => ({
             ...prev,
@@ -98,13 +100,13 @@ const AllEmployees: React.FC = () => {
 
     const renderMobileRow = (employee: EmployeeResponse) => {
         const isExpanded = !!expandedRows[employee.uuid];
-        
+
         return (
             <React.Fragment key={employee.uuid}>
-                <TableRow 
-                    hover 
+                <TableRow
+                    hover
                     onClick={() => toggleRow(employee.uuid)}
-                    sx={{ '& > *': { borderBottom: 'unset' } }}
+                    sx={{'& > *': {borderBottom: 'unset'}}}
                 >
                     <TableCell>
                         <IconButton
@@ -112,7 +114,7 @@ const AllEmployees: React.FC = () => {
                             size="small"
                             onClick={() => toggleRow(employee.uuid)}
                         >
-                            {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                            {isExpanded ? <KeyboardArrowUpIcon/> : <KeyboardArrowDownIcon/>}
                         </IconButton>
                     </TableCell>
                     <TableCell component="th" scope="row">
@@ -120,25 +122,27 @@ const AllEmployees: React.FC = () => {
                     </TableCell>
                     <TableCell align="right">
                         <IconButton size="small" href={`mailto:${employee.email}`}>
-                            <EmailIcon fontSize="small" />
+                            <EmailIcon fontSize="small"/>
                         </IconButton>
                         <IconButton size="small" href={`tel:${employee.phoneNumber}`}>
-                            <PhoneIcon fontSize="small" />
+                            <PhoneIcon fontSize="small"/>
                         </IconButton>
                     </TableCell>
                 </TableRow>
                 <TableRow>
-                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                    <TableCell style={{paddingBottom: 0, paddingTop: 0}} colSpan={6}>
                         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                            <Box sx={{ margin: 1 }}>
+                            <Box sx={{margin: 1}}>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
                                         <Typography variant="body2">
-                                            <CakeIcon fontSize="small" color="action" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                            <CakeIcon fontSize="small" color="action"
+                                                      sx={{verticalAlign: 'middle', mr: 1}}/>
                                             {formatDate(employee.dateOfBirth)}
                                         </Typography>
                                         <Typography variant="body2">
-                                            <EventIcon fontSize="small" color="action" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                                            <EventIcon fontSize="small" color="action"
+                                                       sx={{verticalAlign: 'middle', mr: 1}}/>
                                             Joined: {formatDate(employee.joiningDate)}
                                         </Typography>
                                     </Grid>
@@ -146,7 +150,7 @@ const AllEmployees: React.FC = () => {
                                         <Typography variant="caption" color="text.secondary">
                                             Created: {formatDateTime(employee.createdTime)}
                                         </Typography>
-                                        <br />
+                                        <br/>
                                         <Typography variant="caption" color="text.secondary">
                                             Updated: {formatDateTime(employee.updatedTime)}
                                         </Typography>
@@ -184,8 +188,14 @@ const AllEmployees: React.FC = () => {
     }, [page, size, sortBy, sortOrder]);
 
     useEffect(() => {
-        getAllEmployees();
-    }, [getAllEmployees]);
+        if (employee?.roles) {
+            const hasAdminRole = employee.roles.includes("ADMIN");
+            setIsAdmin(hasAdminRole);
+            if (hasAdminRole) {
+                getAllEmployees();
+            }
+        }
+    }, [employee, getAllEmployees]);
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
@@ -203,27 +213,70 @@ const AllEmployees: React.FC = () => {
         setPage(0);
     };
 
-    return (
-        <Box sx={{width: '100%'}}>
-            <Paper sx={{width: '100%', mb: 2, p: 2}}>
+    return (!isAdmin ? (
+        <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+            <Typography variant="h6" color="error">
+                You don't have permission to access this page
+            </Typography>
+        </Box>
+    ) : (
+        <Box sx={{
+            width: '100%',
+            height: 'calc(100vh - 64px)', // Adjust based on your header height
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            p: 2,
+            boxSizing: 'border-box'
+        }}>
+            <Paper sx={{
+                width: '100%',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+            }}>
                 <Typography
                     variant="h5"
                     component="h2"
                     sx={{
                         p: 2,
                         fontWeight: 'bold',
-                        mb: 2
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        backgroundColor: 'background.paper',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 2,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                 >
                     Employees
                 </Typography>
 
-                <TableContainer>
+                <TableContainer sx={{
+                    flex: 1,
+                    overflow: 'auto',
+                    '&::-webkit-scrollbar': {
+                        width: '8px',
+                        height: '8px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: '#f1f1f1',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        background: '#888',
+                        borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        background: '#555',
+                    },
+                }}>
                     {isMobile ? (
                         <Table size="small" aria-label="collapsible table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell />
+                                    <TableCell/>
                                     <TableCell>Name</TableCell>
                                     <TableCell align="right">Contact</TableCell>
                                 </TableRow>
@@ -232,7 +285,7 @@ const AllEmployees: React.FC = () => {
                                 {loading ? (
                                     <TableRow>
                                         <TableCell colSpan={3} align="center" sx={{py: 3}}>
-                                            <CircularProgress size={24} />
+                                            <CircularProgress size={24}/>
                                         </TableCell>
                                     </TableRow>
                                 ) : result?.data?.length > 0 ? (
@@ -247,7 +300,7 @@ const AllEmployees: React.FC = () => {
                             </TableBody>
                         </Table>
                     ) : (
-                        <Table sx={{ minWidth: 750 }}>
+                        <Table sx={{minWidth: 750}}>
                             <TableHead>
                                 <TableRow>
                                     {headCells.map((headCell) => (
@@ -303,22 +356,22 @@ const AllEmployees: React.FC = () => {
                                         <TableRow hover key={employee.uuid}>
                                             <TableCell>{employee.firstName || '-'}</TableCell>
                                             <TableCell>{employee.lastName || '-'}</TableCell>
-                                            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                                            <TableCell sx={{display: {xs: 'none', sm: 'table-cell'}}}>
                                                 {employee.email || '-'}
                                             </TableCell>
-                                            <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                            <TableCell sx={{display: {xs: 'none', md: 'table-cell'}}}>
                                                 {employee.phoneNumber || '-'}
                                             </TableCell>
-                                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
+                                            <TableCell sx={{display: {xs: 'none', lg: 'table-cell'}}}>
                                                 {formatDate(employee.dateOfBirth)}
                                             </TableCell>
-                                            <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
+                                            <TableCell sx={{display: {xs: 'none', lg: 'table-cell'}}}>
                                                 {formatDate(employee.joiningDate)}
                                             </TableCell>
-                                            <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' } }}>
+                                            <TableCell sx={{display: {xs: 'none', xl: 'table-cell'}}}>
                                                 {formatDateTime(employee.createdTime)}
                                             </TableCell>
-                                            <TableCell sx={{ display: { xs: 'none', xl: 'table-cell' } }}>
+                                            <TableCell sx={{display: {xs: 'none', xl: 'table-cell'}}}>
                                                 {formatDateTime(employee.updatedTime)}
                                             </TableCell>
                                         </TableRow>
@@ -335,52 +388,63 @@ const AllEmployees: React.FC = () => {
                     )}
                 </TableContainer>
 
-                <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={result?.totalItems || 0}
-                    rowsPerPage={size}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    labelRowsPerPage="Rows:"
-                    labelDisplayedRows={({ from, to, count }) =>
-                        isMobile 
-                            ? `${from}-${to} of ${count}` 
-                            : `Showing ${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
-                    }
-                    sx={{
-                        '& .MuiTablePagination-toolbar': {
-                            flexWrap: 'wrap',
-                            justifyContent: 'center',
-                            '& .MuiTablePagination-actions': {
-                                margin: 0,
-                                '& button': {
-                                    padding: '6px',
-                                    margin: '0 4px'
+                <Box sx={{
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    backgroundColor: 'background.paper',
+                    position: 'sticky',
+                    bottom: 0,
+                    zIndex: 2,
+                    boxShadow: '0 -2px 4px rgba(0,0,0,0.1)'
+                }}>
+                    <TablePagination
+                        rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                        component="div"
+                        count={result?.totalItems || 0}
+                        rowsPerPage={size}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        labelRowsPerPage="Rows:"
+                        labelDisplayedRows={({from, to, count}) =>
+                            isMobile
+                                ? `${from}-${to} of ${count}`
+                                : `Showing ${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+                        }
+                        sx={{
+                            '& .MuiTablePagination-toolbar': {
+                                flexWrap: 'wrap',
+                                justifyContent: 'center',
+                                minHeight: '52px',
+                                '& .MuiTablePagination-actions': {
+                                    margin: 0,
+                                    '& button': {
+                                        padding: '6px',
+                                        margin: '0 4px'
+                                    }
+                                },
+                                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                                    margin: '8px 0',
+                                    fontSize: '0.875rem'
+                                },
+                                '& .MuiTablePagination-select': {
+                                    margin: '0 8px',
+                                    padding: '4px 8px'
+                                },
+                                '& .MuiInputBase-root': {
+                                    marginRight: '16px'
                                 }
                             },
-                            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-                                margin: '8px 0',
-                                fontSize: '0.875rem'
-                            },
-                            '& .MuiTablePagination-select': {
-                                margin: '0 8px',
-                                padding: '4px 8px'
-                            },
-                            '& .MuiInputBase-root': {
-                                marginRight: '16px'
+                            '& .MuiTablePagination-spacer': {
+                                flex: '0 1 100%',
+                                height: '8px'
                             }
-                        },
-                        '& .MuiTablePagination-spacer': {
-                            flex: '0 1 100%',
-                            height: '8px'
-                        }
-                    }}
-                />
+                        }}
+                    />
+                </Box>
             </Paper>
         </Box>
-    );
+    ));
 };
 
 export default AllEmployees;
