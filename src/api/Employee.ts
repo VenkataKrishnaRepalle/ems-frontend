@@ -26,7 +26,17 @@ export const GET_EMPLOYEES_BY_MANAGER_API = async (employeeId: string) => {
     return response.data as Employee[];
 }
 
-export const GET_ALL_EMPLOYEES_BY_PAGINATION = async (page: number, size: number, sortBy: string, sortOrder: string) => {
-    const response = await api.get(`/employee/getAll/pagination?page=${page}&size=${size}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
+export const GET_ALL_EMPLOYEES_BY_PAGINATION = async (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+    const params = new URLSearchParams();
+    
+    if (page !== undefined && page > 0) params.append('page', page.toString());
+    if (size !== undefined && size > 0) params.append('size', size.toString());
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+    
+    const queryString = params.toString();
+    const url = `/employee/getAll/pagination${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await api.get(url);
     return response.data as EmployeePaginationResponse;
 }
