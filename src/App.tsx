@@ -19,31 +19,36 @@ import LoginLimitExceedPage from "./components/auth/LoginLimitExceedPage";
 import TeamView from "./components/team-view/TeamView";
 import AllEmployees from "./components/dashboard/AllEmployees";
 import NotificationCom from "./components/notification/Notification";
+import { AuthProvider } from "./auth/AuthContext";
+import { RequireAuth } from "./auth/RequireAuth";
 
 const App: React.FC = () => {
     const employee = useAppSelector((state) => state.employee.employee);
 
     return (
-        <div className="App">
-            <ToastContainer/>
-            {employee && employee.uuid && <Header role="search"/>}
-            <Routes>
-                <Route path="/" element={<Login/>}/>
-                <Route path="/profile" element={<Profile/>}/>
-                <Route path="/dashboard" element={<Dashboard/>}/>
-                <Route path="/register" element={<Register/>}/>
-                <Route path="/education" element={<Education/>}/>
-                <Route path="/attendance" element={<Attendance/>}/>
-                <Route path="/logout" element={<Logout/>}/>
-                <Route path="/review/:reviewType/reviewUuid/:employeePeriodUuid" element={<Review/>}/>
-                <Route path="/forgot-password" element={<ForgotPassword/>}/>
-                <Route path="/reset-password" element={<ResetPassword/>}/>
-                <Route path={"/sessions"} element={<LoginLimitExceedPage/>}/>
-                <Route path={"/team-view"} element={<TeamView/>}/>
-                <Route path={"/all-employees"} element={<AllEmployees/>}/>
-                <Route path={"/notifications"} element={<NotificationCom/>}/>
-            </Routes>
-        </div>
+        <AuthProvider>
+            <div className="App">
+                <ToastContainer/>
+                {employee && employee.uuid && <Header role="search"/>}
+                <Routes>
+                    <Route path="/" element={<Login/>}/>
+                    <Route path="/logout" element={<Logout/>}/>
+                    <Route path="/forgot-password" element={<ForgotPassword/>}/>
+                    <Route path="/reset-password" element={<ResetPassword/>}/>
+                    <Route path={"/sessions"} element={<LoginLimitExceedPage/>}/>
+
+                    <Route path="/profile" element={<RequireAuth><Profile/></RequireAuth>}/>
+                    <Route path="/dashboard" element={<RequireAuth><Dashboard/></RequireAuth>}/>
+                    <Route path="/register" element={<RequireAuth><Register/></RequireAuth>}/>
+                    <Route path="/education" element={<RequireAuth><Education/></RequireAuth>}/>
+                    <Route path="/attendance" element={<RequireAuth><Attendance/></RequireAuth>}/>
+                    <Route path="/review/:reviewType/reviewUuid/:employeePeriodUuid" element={<RequireAuth><Review/></RequireAuth>}/>
+                    <Route path={"/team-view"} element={<RequireAuth><TeamView/></RequireAuth>}/>
+                    <Route path={"/all-employees"} element={<RequireAuth><AllEmployees/></RequireAuth>}/>
+                    <Route path={"/notifications"} element={<RequireAuth><NotificationCom/></RequireAuth>}/>
+                </Routes>
+            </div>
+        </AuthProvider>
     );
 };
 

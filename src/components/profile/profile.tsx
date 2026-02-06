@@ -1,11 +1,9 @@
 import { Box, Container, Grid, TextField, Typography } from "@mui/material";
 
 import { useAppSelector } from "../../redux/hooks";
-import {ValidateLogin} from "../auth/ValidateLogin";
 
 const Profile = () => {
     const employee = useAppSelector((state) => state.employee.employee);
-    ValidateLogin();
 
     return (
         <Box className="bg-gradient" p={4}>

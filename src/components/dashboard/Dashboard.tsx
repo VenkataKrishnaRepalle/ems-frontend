@@ -8,11 +8,8 @@ import {ME_API} from "../../api/Employee";
 import {GET_ALL_ELIGIBLE_YEARS, GET_EMPLOYEE_PERIOD_BY_YEAR} from "../../api/EmployeePeriod";
 import {useAppDispatch, useAppSelector} from "../../redux/hooks";
 import {setEmployee} from "../../redux/employeeSlice";
-import {ValidateLogin} from "../auth/ValidateLogin";
 
 const Dashboard: React.FC = () => {
-
-    ValidateLogin();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const employee = useAppSelector((state) => state.employee.employee);

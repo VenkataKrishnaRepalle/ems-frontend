@@ -1,33 +1,48 @@
 import * as React from "react";
-import {ChangeEvent, FormEvent, useEffect, useState} from "react";
-import {useAppDispatch, useAppSelector} from "../../redux/hooks";
-import {setEmployee} from "../../redux/employeeSlice";
-import {useNavigate} from "react-router-dom";
-import {toast} from "react-toastify";
-import {Login} from "../types/types.d";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import FullPageLoader from "../loader/FullPageLoader";
-import {LOGIN_API} from "../../api/Auth";
-import {Typography, Container, Box, TextField, Button, Link as MuiLink, Paper} from "@mui/material";
-import {ME_API} from "../../api/Employee";
+import { Typography, Container, Box, TextField, Button, Link as MuiLink, Paper, Divider } from "@mui/material";
+import { ME_API } from "../../api/Employee";
+import { useAuth } from "../../auth/AuthContext";
+import { LOGIN_API } from "../../api/Auth";
+import { Login } from "../types/types.d";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { setEmployee } from "../../redux/employeeSlice";
 
 const LoginPage: React.FC = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const { configured, initialized, authenticated, login } = useAuth();
     const employee = useAppSelector((state) => state.employee.employee);
+
     const [formData, setFormData] = useState<Login>({
         email: "",
         password: "",
         requestQuery: null,
     });
-
     const [loading, setLoading] = useState<boolean>(false);
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const {name, value} = event.target;
-        setFormData((prevFormData) => ({...prevFormData, [name]: value}));
+        const { name, value } = event.target;
+        setFormData((prevFormData) => ({ ...prevFormData, [name]: value }));
     };
 
-    const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    const handleKeycloakLogin = async () => {
+        if (!configured) {
+            toast.error("Keycloak is not configured. Set REACT_APP_KEYCLOAK_URL/REALM/CLIENT_ID.");
+            return;
+        }
+        setLoading(true);
+        try {
+            login();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePasswordLogin = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!formData.email || !formData.password) {
             toast.error("Please fill out all required fields.");
@@ -36,7 +51,7 @@ const LoginPage: React.FC = () => {
 
         setLoading(true);
         try {
-            const {requestQuery, ...restFormData} = formData;
+            const { requestQuery, ...restFormData } = formData;
             const payload = requestQuery
                 ? {
                     ...restFormData,
@@ -56,7 +71,7 @@ const LoginPage: React.FC = () => {
             if (error?.response?.data?.error?.code === "MAX_LOGIN_ATTEMPT_REACHED") {
                 toast.info(`Navigating to sessions page for ${formData?.email}`);
                 setTimeout(() => {
-                    navigate("/sessions", {state: {maxLoginAttempts: true, email: formData?.email}});
+                    navigate("/sessions", { state: { maxLoginAttempts: true, email: formData?.email } });
                 }, 0);
             }
         } finally {
@@ -65,18 +80,27 @@ const LoginPage: React.FC = () => {
     };
 
     useEffect(() => {
+        if (employee?.uuid) {
+            navigate("/dashboard");
+            return;
+        }
+
         const redirect = async () => {
             try {
-                const response = await ME_API();
-                if(response){
+                const me = await ME_API();
+                if (me?.uuid) {
+                    dispatch(setEmployee(me));
                     navigate("/dashboard");
                 }
-            } catch (error) {
-                console.log("Not authenticated");
+            } catch {
+                // not authenticated
             }
         };
-        redirect();
-    }, [employee, navigate]);
+
+        if ((configured && initialized && authenticated) || !configured) {
+            redirect();
+        }
+    }, [authenticated, configured, dispatch, employee?.uuid, initialized, navigate]);
 
     return (
         <>
@@ -105,9 +129,22 @@ const LoginPage: React.FC = () => {
                         Login
                     </Typography>
 
+                    <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        onClick={handleKeycloakLogin}
+                        disabled={!configured}
+                        sx={{ mb: 2 }}
+                    >
+                        Login with Keycloak
+                    </Button>
+
+                    <Divider sx={{ my: 2 }}>or</Divider>
+
                     <Box
                         component="form"
-                        onSubmit={handleLogin}
+                        onSubmit={handlePasswordLogin}
                         sx={{display: "flex", flexDirection: "column", gap: 2}}
                         noValidate
                     >
@@ -132,10 +169,17 @@ const LoginPage: React.FC = () => {
                             required
                         />
 
-                        <Button type="submit" variant="contained" size="large" fullWidth>
-                            Login
+                        <Button type="submit" variant="outlined" size="large" fullWidth>
+                            Login with Email & Password
                         </Button>
                     </Box>
+
+                    {!configured && (
+                        <Typography variant="body2" align="center" sx={{mt: 2}} color="text.secondary">
+                            Keycloak disabled: missing env vars REACT_APP_KEYCLOAK_URL, REACT_APP_KEYCLOAK_REALM,
+                            REACT_APP_KEYCLOAK_CLIENT_ID
+                        </Typography>
+                    )}
 
                     <Typography variant="body2" align="center" sx={{mt: 2}}>
                         Forgot your password?{" "}

@@ -33,7 +33,6 @@ import {
     useTheme
 } from "@mui/material";
 import {ADD_EDUCATION, DELETE_EDUCATION, GET_ALL_EDUCATIONS, UPDATE_EDUCATION} from "../../api/Education";
-import { ValidateLogin } from "../auth/ValidateLogin";
 
 const DEGREE_LIST = [
     {key: "SSC_10TH", value: "SSC/CBSC/10"},
@@ -47,7 +46,6 @@ const DEGREE_LIST = [
 
 const EducationPage: React.FC = () => {
     const employee = useAppSelector((state) => state.employee.employee);
-    ValidateLogin();
     const [educations, setEducations] = useState<Education[]>([]);
     const [editMode, setEditMode] = useState<string | null>(null);
     const [editedEducation, setEditedEducation] = useState<Partial<Education>>({});

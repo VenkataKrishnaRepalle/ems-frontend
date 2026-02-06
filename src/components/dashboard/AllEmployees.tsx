@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {ValidateLogin} from "../auth/ValidateLogin";
 import {EmployeePaginationResponse, EmployeeResponse} from "../types/types.d";
 import {GET_ALL_EMPLOYEES_BY_PAGINATION} from "../../api/Employee";
 import {
@@ -79,7 +78,6 @@ const headCells: readonly HeadCell[] = [
 const DEFAULT_SORT_FIELD: keyof EmployeeResponse = 'uuid';
 
 const AllEmployees: React.FC = () => {
-    ValidateLogin();
     const employee = useAppSelector((state) => state.employee.employee);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));

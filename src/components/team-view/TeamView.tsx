@@ -4,7 +4,6 @@ import {useNavigate} from "react-router-dom";
 import {GET_EMPLOYEES_BY_MANAGER_API, GET_FULL_TEAM_API, ME_API} from "../../api/Employee";
 import {setEmployee} from "../../redux/employeeSlice";
 import {Employee} from "../types/types.d";
-import {ValidateLogin} from "../auth/ValidateLogin";
 import {
     Box,
     Card,
@@ -28,7 +27,6 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {toast} from "react-toastify";
 
 const TeamView: React.FC = () => {
-    ValidateLogin();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const theme = useTheme();

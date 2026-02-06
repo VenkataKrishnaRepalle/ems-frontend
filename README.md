@@ -14,6 +14,21 @@ Notes:
 - Your backend must issue a readable CSRF token (via cookie like `XSRF-TOKEN` or a `<meta name="csrf-token" content="...">` tag).
 - If your frontend (`http://localhost:3000`) calls a backend on another origin (like `http://localhost:8082`), your backend must allow credentialed CORS and set cookies appropriately (often `SameSite=None; Secure` for cross-site cookies).
 
+## Keycloak Login
+
+This frontend uses Keycloak (OIDC) via `keycloak-js` and attaches `Authorization: Bearer <token>` to API requests.
+
+Required env vars:
+- `REACT_APP_KEYCLOAK_URL` (e.g. `https://sso.example.com`)
+- `REACT_APP_KEYCLOAK_REALM` (e.g. `ems`)
+- `REACT_APP_KEYCLOAK_CLIENT_ID` (e.g. `ems-frontend`)
+
+Optional env vars:
+- `REACT_APP_API_BASE_URL` (default `http://localhost:8082/api`)
+- `REACT_APP_WITH_CREDENTIALS` (set `true` only if your backend needs cookies; default `false`)
+- `REACT_APP_KEYCLOAK_SILENT_SSO` (set `true` to enable iframe-based silent SSO using `public/silent-check-sso.html`)
+- `REACT_APP_KEYCLOAK_INIT_TIMEOUT_MS` (default `8000`)
+
 ## Available Scripts
 
 In the project directory, you can run:
