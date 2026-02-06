@@ -2,6 +2,18 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## CSRF (Cross-Site Request Forgery)
+
+This frontend sends cookies (`withCredentials: true`) and automatically attaches a CSRF token header for non-GET requests.
+
+- Default cookie name: `XSRF-TOKEN`
+- Default header name: `X-XSRF-TOKEN`
+- Override via env vars: `REACT_APP_CSRF_COOKIE_NAME`, `REACT_APP_CSRF_HEADER_NAME`
+
+Notes:
+- Your backend must issue a readable CSRF token (via cookie like `XSRF-TOKEN` or a `<meta name="csrf-token" content="...">` tag).
+- If your frontend (`http://localhost:3000`) calls a backend on another origin (like `http://localhost:8082`), your backend must allow credentialed CORS and set cookies appropriately (often `SameSite=None; Secure` for cross-site cookies).
+
 ## Available Scripts
 
 In the project directory, you can run:

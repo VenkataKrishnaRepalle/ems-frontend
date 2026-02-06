@@ -198,3 +198,20 @@ export interface EmployeeResponse {
     createdTime: string;
     updatedTime: string;
 }
+
+export interface Notification {
+    uuid: string;
+    employeeUuid: string;
+    title: string;
+    message: string;
+    link: string;
+    status: string;
+    createdTime: string;
+    updatedTime: string;
+}
+export interface NotificationPaginationResponse {
+    data: Notification[];
+    currentPage: number;
+    totalItems: number;
+    totalPages: number;
+}

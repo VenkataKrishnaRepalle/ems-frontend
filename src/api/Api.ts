@@ -1,8 +1,8 @@
-// src/api/api.ts
 import axios, {AxiosError, AxiosInstance} from "axios";
 import {toast} from "react-toastify";
 import {ErrorResponse} from "../components/types/types.d";
 import {REFRESH_TOKEN_API} from "./Auth";
+import { applyCsrfHeader } from "./csrf";
 
 const API_BASE_URL = "http://localhost:8082/api";
 
@@ -16,7 +16,7 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-        return config;
+        return applyCsrfHeader(config);
     },
     (error) => Promise.reject(error)
 );

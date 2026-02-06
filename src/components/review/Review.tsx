@@ -1,12 +1,12 @@
 import * as React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAppSelector } from "../../redux/hooks";
-import { Box, Button, Container, TextField, Typography } from "@mui/material";
-import { toast } from "react-toastify";
-import { TimelineAndReview, Review } from "../types/types.d";
-import { GET_EMPLOYEE_PERIOD_BY_TYPE } from "../../api/Timeline";
-import { ADD_REVIEW_API } from "../../api/Review";
+import {useCallback, useEffect, useState} from "react";
+import {useLocation, useNavigate} from "react-router-dom";
+import {useAppSelector} from "../../redux/hooks";
+import {Box, Button, Container, TextField, Typography} from "@mui/material";
+import {toast} from "react-toastify";
+import {TimelineAndReview, Review} from "../types/types.d";
+import {GET_EMPLOYEE_PERIOD_BY_TYPE} from "../../api/Timeline";
+import {ADD_REVIEW_API} from "../../api/Review";
 
 const AddReview = () => {
     const location = useLocation();
@@ -22,7 +22,7 @@ const AddReview = () => {
         try {
             const response = await GET_EMPLOYEE_PERIOD_BY_TYPE(state.employeePeriodUuid, state.reviewType);
             setTimeline(response);
-            setReview({ ...response.review, timelineUuid: response.uuid, type: response.type });
+            setReview({...response.review, timelineUuid: response.uuid, type: response.type});
             if (response.status === "COMPLETED") {
                 setIsCompleted(true);
             }
@@ -39,12 +39,16 @@ const AddReview = () => {
         fetchReview();
     }, [fetchReview]);
 
+    const handleSubmitButton = () => {
+        return !review?.whatWentWell?.trim() || !review?.whatDoneBetter?.trim() || !review?.wayForward?.trim();
+    }
+
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = event.target;
-        setReview((prevReview) => (prevReview ? { ...prevReview, [name]: value } : null));
+        const {name, value} = event.target;
+        setReview((prevReview) => (prevReview ? {...prevReview, [name]: value} : null));
 
         setErrors((prevErrors) => {
-            const newErrors = { ...prevErrors };
+            const newErrors = {...prevErrors};
             if (value.trim() === "") {
                 newErrors[name] = `${name.replace(/([A-Z])/g, " $1")} is required.`;
             } else {
@@ -79,7 +83,7 @@ const AddReview = () => {
                 <Typography variant="h4" align="center" gutterBottom>
                     {state.reviewType} Review - {state.year}
                 </Typography>
-                <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: "grid", gap: 2 }}>
+                <Box component="form" onSubmit={handleSubmit} noValidate sx={{display: "grid", gap: 2}}>
                     <TextField
                         label="What went well"
                         name="whatWentWell"
@@ -135,7 +139,11 @@ const AddReview = () => {
                         error={!!errors.overallComments}
                         helperText={errors.overallComments}
                     />
-                    <Button variant="contained" color="primary" type="submit" fullWidth disabled={isCompleted}>
+                    <Button variant="contained"
+                            color="primary"
+                            type="submit"
+                            fullWidth
+                            disabled={isCompleted || handleSubmitButton()}>
                         Submit {state.reviewType} Review
                     </Button>
                     <Button
@@ -143,12 +151,12 @@ const AddReview = () => {
                         color="error"
                         type="reset"
                         fullWidth
-                        sx={{ mt: 1 }}
+                        sx={{mt: 1}}
                         disabled={isCompleted}
                         onClick={() =>
                             setReview(
                                 timeline?.review
-                                    ? { ...timeline.review, timelineUuid: timeline.uuid, type: timeline.type }
+                                    ? {...timeline.review, timelineUuid: timeline.uuid, type: timeline.type}
                                     : null
                             )
                         }

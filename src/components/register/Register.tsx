@@ -8,20 +8,22 @@ import {
     Autocomplete, InputAdornment, IconButton,
 } from "@mui/material";
 import {useNavigate} from "react-router-dom";
-import {useAppSelector} from "../../redux/hooks";
+import {useAppDispatch, useAppSelector} from "../../redux/hooks";
 import {Visibility, VisibilityOff} from "@mui/icons-material";
 import {toast} from "react-toastify";
 import {Department, EmployeeRequest, Manager} from "../types/types.d";
 import {GET_ALL_DEPARTMENTS_API} from "../../api/Department";
-import {ADD_EMPLOYEE, GET_ACTIVE_MANAGERS} from "../../api/Employee";
+import {ADD_EMPLOYEE, GET_ACTIVE_MANAGERS, ME_API} from "../../api/Employee";
+import {setEmployee} from "../../redux/employeeSlice";
 
 
 const Register: React.FC = () => {
     const currentUser = useAppSelector((state) => state.employee.employee);
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
+    const dispatch = useAppDispatch();
 
-    const [employee, setEmployee] = useState<EmployeeRequest>({
+    const [employee, setEmployeeData] = useState<EmployeeRequest>({
         firstName: "",
         lastName: "",
         gender: "",
@@ -47,10 +49,21 @@ const Register: React.FC = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        if (currentUser?.roles?.includes("ADMIN")) {
-            setIsAdmin(true);
-        }
-    }, [currentUser]);
+        const fetchAndSetUser = async () => {
+            if (currentUser == null) {
+                try {
+                    const employeeDetails = await ME_API();
+                    dispatch(setEmployee(employeeDetails));
+                } catch (error) {
+                    console.error("Failed to fetch user details:", error);
+                }
+            } else {
+                setIsAdmin(currentUser?.roles?.includes("ADMIN") ?? false);
+            }
+        };
+
+        fetchAndSetUser();
+    }, [currentUser, dispatch]);
 
     const fetchDepartments = async () => {
         if (departments.length > 0) return;
@@ -87,7 +100,7 @@ const Register: React.FC = () => {
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;
-        setEmployee((prev) => ({...prev, [name]: value}));
+        setEmployeeData((prev) => ({...prev, [name]: value}));
     };
 
     const validateForm = (): boolean => {
@@ -171,7 +184,7 @@ const Register: React.FC = () => {
                             ]}
                             getOptionLabel={(option) => option.label}
                             onChange={(_event, newValue) => {
-                                setEmployee({
+                                setEmployeeData({
                                     ...employee,
                                     gender: newValue ? newValue.value : ""
                                 });
@@ -240,7 +253,7 @@ const Register: React.FC = () => {
                             onChange={(_event, newValue) => {
                                 const departmentValid = newValue && newValue.value;
 
-                                setEmployee({
+                                setEmployeeData({
                                     ...employee,
                                     departmentName: departmentValid ? newValue.value : "",
                                 });
@@ -264,7 +277,7 @@ const Register: React.FC = () => {
                             ]}
                             getOptionLabel={(option) => option.label}
                             onChange={(_event, newValue) => {
-                                setEmployee({
+                                setEmployeeData({
                                     ...employee,
                                     isManager: newValue ? newValue.value : ""
                                 });
@@ -290,7 +303,7 @@ const Register: React.FC = () => {
                             loading={loadingManagers}
                             onFocus={fetchManagers}
                             onChange={(_event, newValue) => {
-                                setEmployee({
+                                setEmployeeData({
                                     ...employee,
                                     managerUuid: newValue ? newValue.uuid : "",
                                 });
@@ -325,7 +338,7 @@ const Register: React.FC = () => {
                             ]}
                             getOptionLabel={(option) => option.label}
                             onChange={(_event, newValue) => {
-                                setEmployee({
+                                setEmployeeData({
                                     ...employee,
                                     jobTitle: newValue ? newValue.value : ""
                                 });

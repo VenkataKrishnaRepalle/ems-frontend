@@ -18,6 +18,7 @@ import ResetPassword from "./components/auth/ResetPassword";
 import LoginLimitExceedPage from "./components/auth/LoginLimitExceedPage";
 import TeamView from "./components/team-view/TeamView";
 import AllEmployees from "./components/dashboard/AllEmployees";
+import NotificationCom from "./components/notification/Notification";
 
 const App: React.FC = () => {
     const employee = useAppSelector((state) => state.employee.employee);
@@ -40,6 +41,7 @@ const App: React.FC = () => {
                 <Route path={"/sessions"} element={<LoginLimitExceedPage/>}/>
                 <Route path={"/team-view"} element={<TeamView/>}/>
                 <Route path={"/all-employees"} element={<AllEmployees/>}/>
+                <Route path={"/notifications"} element={<NotificationCom/>}/>
             </Routes>
         </div>
     );

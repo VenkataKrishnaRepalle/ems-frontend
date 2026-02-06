@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useAppSelector} from "../../redux/hooks";
 import {useNavigate} from "react-router-dom";
 import {
@@ -17,6 +17,7 @@ import {
     ListItem,
     ListItemButton,
     ListItemText,
+    Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
@@ -31,6 +32,10 @@ import LockResetIcon from "@mui/icons-material/LockReset";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PeopleIcon from '@mui/icons-material/People';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import {GET_NOTIFICATIONS_COUNT} from "../../api/Notification";
+import {Client} from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 
 
 interface HeaderProps {
@@ -44,13 +49,56 @@ const Header: React.FC<HeaderProps> = () => {
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const [anchorElDesktop, setAnchorElDesktop] = useState<null | HTMLElement>(null);
+    const [notificationCount, setNotificationCount] = useState<number>();
+    const stompClientRef = useRef<Client | null>(null);
 
     useEffect(() => {
         if (employee?.roles) {
             setIsAdmin(employee.roles.includes("ADMIN"));
             setIsManager(employee.roles.includes("MANAGER"));
         }
+        getNotificationsCount();
     }, [employee]);
+
+    useEffect(() => {
+        if (employee?.uuid) {
+            const client = new Client({
+                webSocketFactory: () => new SockJS("http://localhost:8082/ws"),
+                onConnect: () => {
+                    console.log("Connected to WebSocket");
+                    client.subscribe(`/topic/notifications/count/${employee.uuid}`, (msg) => {
+                        try {
+                            const count = JSON.parse(msg.body) as number;
+                            setNotificationCount(notificationCount + count);
+                        } catch (error) {
+                            console.error("Error parsing notification message:", error);
+                        }
+                    });
+                },
+                onStompError: (frame) => {
+                    console.error("Broker reported error: " + frame.headers["message"]);
+                    console.error("Additional details: " + frame.body);
+                },
+            });
+
+            stompClientRef.current = client;
+            client.activate();
+
+            return () => {
+                if (client.active) {
+                    client.deactivate();
+                    console.log("Disconnected WebSocket");
+                }
+            };
+        }
+    }, [employee.uuid, notificationCount]);
+
+    const getNotificationsCount = async () => {
+        const notificationCounts = await GET_NOTIFICATIONS_COUNT(employee.uuid);
+        if (notificationCounts !== null) {
+            setNotificationCount(notificationCounts.UNREAD);
+        }
+    }
 
     const handleMobileDrawerToggle = () => {
         setMobileDrawerOpen(!mobileDrawerOpen);
@@ -172,127 +220,150 @@ const Header: React.FC<HeaderProps> = () => {
 
     return (
         <>
-        <AppBar position="sticky" color="primary" elevation={2}>
-            <Toolbar>
-                {/* Mobile Menu Button */}
-                <IconButton
-                    edge="start"
-                    color="inherit"
-                    aria-label="menu"
-                    onClick={handleMobileDrawerToggle}
-                    sx={{mr: 2, display: {xs: "flex", md: "none"}}}
-                >
-                    <MenuIcon/>
-                </IconButton>
+            <AppBar position="sticky" color="primary" elevation={2}>
+                <Toolbar>
+                    {/* Mobile Menu Button */}
+                    <IconButton
+                        edge="start"
+                        color="inherit"
+                        aria-label="menu"
+                        onClick={handleMobileDrawerToggle}
+                        sx={{mr: 2, display: {xs: "flex", md: "none"}}}
+                    >
+                        <MenuIcon/>
+                    </IconButton>
 
-                {/* App Title */}
-                <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{
-                        flexGrow: 1,
-                        cursor: "pointer",
-                        fontWeight: 600,
-                        display: "flex",
-                        alignItems: "center",
-                    }}
-                    onClick={() => navigate("/dashboard")}
-                >
-                    <HomeIcon sx={{mr: 1, display: {xs: "none", sm: "block"}}}/>
-                    <Box component="span" sx={{display: {xs: "none", sm: "block"}}}>
-                        Employee Management
-                    </Box>
-                    <Box component="span" sx={{display: {xs: "block", sm: "none"}}}>
-                        EMS
-                    </Box>
-                </Typography>
+                    {/* App Title */}
+                    <Typography
+                        variant="h6"
+                        component="div"
+                        sx={{
+                            flexGrow: 1,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                        onClick={() => navigate("/dashboard")}
+                    >
+                        <HomeIcon sx={{mr: 1, display: {xs: "none", sm: "block"}}}/>
+                        <Box component="span" sx={{display: {xs: "none", sm: "block"}}}>
+                            Employee Management
+                        </Box>
+                        <Box component="span" sx={{display: {xs: "block", sm: "none"}}}>
+                            EMS
+                        </Box>
+                    </Typography>
 
-                {/* Desktop Menu Buttons */}
-                <Box sx={{display: {xs: "none", md: "flex"}, gap: 1}}>
-                    <Button color="inherit" onClick={() => navigate("/dashboard")} startIcon={<HomeIcon/>}>
-                        My View
-                    </Button>
-                    {isManager && (
-                        <Button color="inherit" onClick={() => navigate("/team-view")} startIcon={<GroupIcon/>}>
-                            My Team
+                    {/* Mobile Notification Icon */}
+                    <IconButton
+                        size="large"
+                        aria-label="show new notifications"
+                        color="inherit"
+                        onClick={() => handleNavigation("/notifications")}
+                        sx={{display: {xs: "flex", md: "none"}}}
+                    >
+                        <Badge badgeContent={notificationCount} color="error">
+                            <NotificationsIcon/>
+                        </Badge>
+                    </IconButton>
+
+                    {/* Desktop Menu Buttons */}
+                    <Box sx={{display: {xs: "none", md: "flex"}, alignItems: 'center', gap: 1}}>
+                        <Button color="inherit" onClick={() => navigate("/dashboard")} startIcon={<HomeIcon/>}>
+                            My View
                         </Button>
-                    )}
-                    {isAdmin && (
-                        <Button color="inherit" onClick={() => navigate("/all-employees")} startIcon={<PeopleIcon/>}>
-                            All employees
+                        {isManager && (
+                            <Button color="inherit" onClick={() => navigate("/team-view")} startIcon={<GroupIcon/>}>
+                                My Team
                             </Button>
-                            )}
-                            {isAdmin && (
-                                <Button color="inherit" onClick={() => navigate("/register")}
-                                        startIcon={<PersonAddIcon/>}>
-                                    Add Employee
-                                </Button>
-                            )}
-                        <Button color="inherit" onClick={() => navigate("/attendance")} startIcon={<EventIcon />}>
-                        Attendance
+                        )}
+                        {isAdmin && (
+                            <Button color="inherit" onClick={() => navigate("/all-employees")}
+                                    startIcon={<PeopleIcon/>}>
+                                All employees
+                            </Button>
+                        )}
+                        {isAdmin && (
+                            <Button color="inherit" onClick={() => navigate("/register")}
+                                    startIcon={<PersonAddIcon/>}>
+                                Add Employee
+                            </Button>
+                        )}
+                        <Button color="inherit" onClick={() => navigate("/attendance")} startIcon={<EventIcon/>}>
+                            Attendance
                         </Button>
                         <Button color="inherit" onClick={() => navigate("/leaves")} startIcon={<BeachAccessIcon/>}>
-                    Leave
-                </Button>
-                <Button color="inherit" onClick={handleDesktopMenuOpen} startIcon={<MoreVertIcon/>}>
-                    More
-                </Button>
-            </Box>
+                            Leave
+                        </Button>
+                        <IconButton
+                            size="large"
+                            aria-label="show new notifications"
+                            color="inherit"
+                            onClick={() => handleNavigation("/notifications")}
+                        >
+                            <Badge badgeContent={notificationCount} color="error">
+                                <NotificationsIcon/>
+                            </Badge>
+                        </IconButton>
+                        <Button color="inherit" onClick={handleDesktopMenuOpen} startIcon={<MoreVertIcon/>}>
+                            More
+                        </Button>
+                    </Box>
 
-            {/* Desktop Dropdown Menu */}
-            <Menu
-                id="menu-appbar-desktop"
-                anchorEl={anchorElDesktop}
-                open={Boolean(anchorElDesktop)}
-                onClose={handleDesktopMenuClose}
-                anchorOrigin={{vertical: "bottom", horizontal: "right"}}
-                transformOrigin={{vertical: "top", horizontal: "right"}}
+                    {/* Desktop Dropdown Menu */}
+                    <Menu
+                        id="menu-appbar-desktop"
+                        anchorEl={anchorElDesktop}
+                        open={Boolean(anchorElDesktop)}
+                        onClose={handleDesktopMenuClose}
+                        anchorOrigin={{vertical: "bottom", horizontal: "right"}}
+                        transformOrigin={{vertical: "top", horizontal: "right"}}
+                    >
+                        <MenuItem onClick={() => handleNavigation("/profile")}>
+                            <AccountCircleIcon sx={{mr: 1}} fontSize="small"/>
+                            Profile
+                        </MenuItem>
+                        <MenuItem onClick={() => handleNavigation("/education")}>
+                            <SchoolIcon sx={{mr: 1}} fontSize="small"/>
+                            Education
+                        </MenuItem>
+                        <MenuItem onClick={() => handleNavigation("/settings")}>
+                            <SettingsIcon sx={{mr: 1}} fontSize="small"/>
+                            Settings
+                        </MenuItem>
+                        <MenuItem onClick={() => handleNavigation("/reset-password")}>
+                            <LockResetIcon sx={{mr: 1}} fontSize="small"/>
+                            Reset Password
+                        </MenuItem>
+                        <Divider/>
+                        <MenuItem onClick={() => handleNavigation("/logout")} sx={{color: "error.main"}}>
+                            <LogoutIcon sx={{mr: 1}} fontSize="small"/>
+                            Logout
+                        </MenuItem>
+                    </Menu>
+                </Toolbar>
+            </AppBar>
+
+            {/* Mobile Drawer */}
+            <Drawer
+                variant="temporary"
+                anchor="left"
+                open={mobileDrawerOpen}
+                onClose={handleMobileDrawerToggle}
+                ModalProps={{
+                    keepMounted: true, // Better performance on mobile
+                }}
+                sx={{
+                    display: {xs: "block", md: "none"},
+                    "& .MuiDrawer-paper": {boxSizing: "border-box", width: 250},
+                }}
             >
-                <MenuItem onClick={() => handleNavigation("/profile")}>
-                    <AccountCircleIcon sx={{mr: 1}} fontSize="small"/>
-                    Profile
-                </MenuItem>
-                <MenuItem onClick={() => handleNavigation("/education")}>
-                    <SchoolIcon sx={{mr: 1}} fontSize="small"/>
-                    Education
-                </MenuItem>
-                <MenuItem onClick={() => handleNavigation("/settings")}>
-                    <SettingsIcon sx={{mr: 1}} fontSize="small"/>
-                    Settings
-                </MenuItem>
-                <MenuItem onClick={() => handleNavigation("/reset-password")}>
-                    <LockResetIcon sx={{mr: 1}} fontSize="small"/>
-                    Reset Password
-                </MenuItem>
-                <Divider/>
-                <MenuItem onClick={() => handleNavigation("/logout")} sx={{color: "error.main"}}>
-                    <LogoutIcon sx={{mr: 1}} fontSize="small"/>
-                    Logout
-                </MenuItem>
-            </Menu>
-        </Toolbar>
-        </AppBar>
-
-{/* Mobile Drawer */
-}
-    <Drawer
-        variant="temporary"
-        anchor="left"
-        open={mobileDrawerOpen}
-        onClose={handleMobileDrawerToggle}
-        ModalProps={{
-            keepMounted: true, // Better performance on mobile
-        }}
-        sx={{
-            display: {xs: "block", md: "none"},
-            "& .MuiDrawer-paper": {boxSizing: "border-box", width: 250},
-        }}
-    >
-        {drawer}
-    </Drawer>
-</>
-)
-    ;
+                {drawer}
+            </Drawer>
+        </>
+    )
+        ;
 };
 
 export default Header;
