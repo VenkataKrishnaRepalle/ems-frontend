@@ -11,59 +11,57 @@ export function RequireAuth({ children }: { children: React.ReactElement }) {
   const { configured, initialized, authenticated } = useAuth();
   const dispatch = useAppDispatch();
   const employee = useAppSelector((state) => state.employee.employee);
-  const [checkingMe, setCheckingMe] = useState(false);
-  const [meChecked, setMeChecked] = useState(false);
-
   const hasEmployee = !!employee?.uuid;
-  const authModeKey = configured
-    ? `kc:${initialized ? (authenticated ? "auth" : "noauth") : "init"}`
-    : "legacy";
+  const [state, setState] = useState<"checking" | "allowed" | "denied">("checking");
 
   useEffect(() => {
-    setCheckingMe(false);
-    setMeChecked(false);
-  }, [authModeKey]);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (hasEmployee) return;
+    const run = async () => {
+      if (hasEmployee) {
+        setState("allowed");
+        return;
+      }
 
-    if (configured) {
-      if (!initialized) return;
-      if (!authenticated) return;
-    }
+      if (configured) {
+        if (!initialized) {
+          setState("checking");
+          return;
+        }
+        if (!authenticated) {
+          setState("denied");
+          return;
+        }
+      }
 
-    if (checkingMe || meChecked) return;
+      setState("checking");
+      try {
+        const me = await ME_API();
+        if (cancelled) return;
 
-    setCheckingMe(true);
-    ME_API()
-      .then((me) => {
-        if (me?.uuid) dispatch(setEmployee(me));
-        else dispatch(clearEmployee());
-      })
-      .catch(() => {
+        if (me?.uuid) {
+          dispatch(setEmployee(me));
+          setState("allowed");
+        } else {
+          dispatch(clearEmployee());
+          setState("denied");
+        }
+      } catch {
+        if (cancelled) return;
         dispatch(clearEmployee());
-      })
-      .finally(() => {
-        setCheckingMe(false);
-        setMeChecked(true);
-      });
-  }, [
-    authenticated,
-    checkingMe,
-    configured,
-    dispatch,
-    hasEmployee,
-    initialized,
-    meChecked,
-  ]);
+        setState("denied");
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated, configured, dispatch, hasEmployee, initialized]);
 
   if (hasEmployee) return children;
-
   if (configured && !initialized) return <FullPageLoader loading={true} />;
-
-  if (configured && !authenticated) return <Navigate to="/" replace />;
-
-  if (checkingMe || !meChecked) return <FullPageLoader loading={true} />;
-
-  return <Navigate to="/" replace />;
+  if (state === "checking") return <FullPageLoader loading={true} />;
+  if (state === "denied") return <Navigate to="/" replace />;
+  return children;
 }

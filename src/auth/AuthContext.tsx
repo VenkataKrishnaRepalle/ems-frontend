@@ -2,8 +2,7 @@ import * as React from "react";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "../redux/hooks";
-import { clearEmployee, setEmployee } from "../redux/employeeSlice";
-import { ME_API } from "../api/Employee";
+import { clearEmployee } from "../redux/employeeSlice";
 import { LOGOUT_API } from "../api/Auth";
 import { initKeycloak, keycloak, readKeycloakEnv } from "./keycloak";
 
@@ -48,34 +47,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setInitialized(true);
         setAuthenticated(Boolean(isAuthenticated));
-
-        if (isAuthenticated) {
-          void (async () => {
-            try {
-              const me = await ME_API();
-              dispatch(setEmployee(me));
-            } catch {
-              dispatch(clearEmployee());
-              toast.error("Logged in, but failed to load profile (/employee/me).");
-            }
-          })();
-        } else {
-          dispatch(clearEmployee());
-        }
+        if (!isAuthenticated) dispatch(clearEmployee());
 
         keycloak.onAuthLogout = () => {
           dispatch(clearEmployee());
           setAuthenticated(false);
         };
 
-        keycloak.onAuthSuccess = async () => {
+        keycloak.onAuthSuccess = () => {
           setAuthenticated(true);
-          try {
-            const me = await ME_API();
-            dispatch(setEmployee(me));
-          } catch {
-            dispatch(clearEmployee());
-          }
         };
 
         keycloak.onTokenExpired = async () => {

@@ -85,7 +85,12 @@ const LoginPage: React.FC = () => {
             return;
         }
 
-        const redirect = async () => {
+        if (configured && initialized && authenticated) {
+            navigate("/dashboard");
+            return;
+        }
+
+        const redirectLegacySession = async () => {
             try {
                 const me = await ME_API();
                 if (me?.uuid) {
@@ -97,8 +102,8 @@ const LoginPage: React.FC = () => {
             }
         };
 
-        if ((configured && initialized && authenticated) || !configured) {
-            redirect();
+        if (!configured) {
+            redirectLegacySession();
         }
     }, [authenticated, configured, dispatch, employee?.uuid, initialized, navigate]);
 
