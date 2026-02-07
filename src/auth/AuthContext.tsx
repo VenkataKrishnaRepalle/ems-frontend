@@ -1,10 +1,10 @@
 import * as React from "react";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { useAppDispatch } from "../redux/hooks";
 import { clearEmployee } from "../redux/employeeSlice";
 import { LOGOUT_API } from "../api/Auth";
-import { initKeycloak, keycloak, readKeycloakEnv } from "./keycloak";
+import { initKeycloakOnce, keycloak } from "./keycloak";
 
 export type AuthContextValue = {
   configured: boolean;
@@ -16,39 +16,36 @@ export type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function getKeycloakInitErrorMessage(error: unknown): string | null {
+  if (!error) return null;
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message || null;
+  if (typeof error === "object") {
+    const maybe = error as { error?: unknown; error_description?: unknown; message?: unknown };
+    if (typeof maybe.error_description === "string" && maybe.error_description.trim()) return maybe.error_description;
+    if (typeof maybe.error === "string" && maybe.error.trim()) return maybe.error;
+    if (typeof maybe.message === "string" && maybe.message.trim()) return maybe.message;
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
-  const configured = !!readKeycloakEnv();
+  const configured = Boolean(keycloak);
   const [initialized, setInitialized] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
-  const loginInProgressRef = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
     const run = async () => {
       if (!configured || !keycloak) {
-        if (mounted) {
-          setInitialized(true);
-          setAuthenticated(false);
-        }
+        setInitialized(true);
+        setAuthenticated(false);
         return;
       }
 
       try {
-        const initTimeoutMs = Number(process.env.REACT_APP_KEYCLOAK_INIT_TIMEOUT_MS ?? "8000");
-        const isAuthenticated = await Promise.race([
-          initKeycloak(),
-          new Promise<boolean>((_, reject) =>
-            setTimeout(() => reject(new Error("Keycloak init timeout")), initTimeoutMs)
-          ),
-        ]);
-        if (!mounted) return;
-
-        setInitialized(true);
-        setAuthenticated(Boolean(isAuthenticated));
-        if (!isAuthenticated) dispatch(clearEmployee());
-
         keycloak.onAuthLogout = () => {
           dispatch(clearEmployee());
           setAuthenticated(false);
@@ -66,18 +63,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setAuthenticated(false);
           }
         };
+
+        const isAuthenticated = await initKeycloakOnce();
+        if (cancelled) return;
+
+        setInitialized(true);
+        setAuthenticated(Boolean(isAuthenticated));
+        if (!isAuthenticated) dispatch(clearEmployee());
       } catch (e) {
-        if (!mounted) return;
+        if (cancelled) return;
         setInitialized(true);
         setAuthenticated(false);
         dispatch(clearEmployee());
-        toast.error("Failed to initialize Keycloak login.");
+        // eslint-disable-next-line no-console
+        console.error("Keycloak init failed:", e);
+        const message = getKeycloakInitErrorMessage(e);
+        toast.error(message ? `Failed to initialize Keycloak login: ${message}` : "Failed to initialize Keycloak login.");
       }
     };
 
-    run();
+    void run();
     return () => {
-      mounted = false;
+      cancelled = true;
     };
   }, [configured, dispatch]);
 
@@ -88,11 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authenticated,
       login: () => {
         if (!configured || !keycloak) return;
-        if (loginInProgressRef.current) return;
-        loginInProgressRef.current = true;
-        keycloak.login().finally(() => {
-          loginInProgressRef.current = false;
-        });
+        void keycloak.login();
       },
       logout: async () => {
         dispatch(clearEmployee());

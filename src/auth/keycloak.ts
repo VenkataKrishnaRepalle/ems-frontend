@@ -34,11 +34,19 @@ export const defaultKeycloakInitOptions: KeycloakInitOptions = {
     : {}),
 };
 
-export async function initKeycloak(
-  options: KeycloakInitOptions = defaultKeycloakInitOptions
-): Promise<boolean> {
+let initPromise: Promise<boolean> | null = null;
+
+async function initKeycloak(options: KeycloakInitOptions = defaultKeycloakInitOptions): Promise<boolean> {
   if (!keycloak) return false;
   return keycloak.init(options);
+}
+
+// React 18 StrictMode runs effects twice in dev; also some apps remount providers.
+// Cache init so we don't kick off multiple simultaneous init() calls.
+export function initKeycloakOnce(options: KeycloakInitOptions = defaultKeycloakInitOptions): Promise<boolean> {
+  if (!keycloak) return Promise.resolve(false);
+  initPromise ??= initKeycloak(options);
+  return initPromise;
 }
 
 export async function ensureFreshToken(minValiditySeconds = 30): Promise<string | null> {
